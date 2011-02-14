@@ -1,0 +1,5 @@
+.DS_Store
+*~
+/project/boot
+/project/build/target
+/target
