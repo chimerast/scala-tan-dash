@@ -12,7 +12,7 @@ trait Layer {
 
 class DebugLayer extends Layer {
   override def render(scene: Scene) = {
-    glOrthoFixed {
+    glOrthogonal {
       glDrawString(10.0f, 10.0f, "FPS: %.1f".format(1.0 / scene.delta), Color.black);
     }
   }

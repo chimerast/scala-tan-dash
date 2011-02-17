@@ -1,16 +1,10 @@
 package org.karatachi.scalatan
 
 import org.lwjgl._
-import org.lwjgl.opengl._
-import org.lwjgl.opengl.GL11._
-import org.lwjgl.input._
-import org.newdawn.slick._
-import org.newdawn.slick.opengl._
-import org.newdawn.slick.font.effects._
-import org.karatachi.scala.opengl.GLUtils._
+import org.karatachi.scala.opengl._
 
 object Bootstrap {
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     var fullscreen = false
     for (arg <- args) {
       arg match {
@@ -27,7 +21,8 @@ object Bootstrap {
         Sys.alert("Error", e.getMessage)
         e.printStackTrace
       }
-    } finally {
+    }
+    finally {
       ScalaTanDash.cleanup
     }
   }
