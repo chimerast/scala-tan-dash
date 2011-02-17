@@ -31,10 +31,11 @@ class PMDFormatException extends Exception {
 }
 
 class PMDModel(file: File, buffer: ByteBuffer) {
+  val VERTEX_BUFFER_STRIDE = 8 * 4;
+
   val basedir = file.getParent
 
   val header = new PMDHeader(buffer)
-
   val vertices = Array.fill(buffer.getInt) { new PMDVertex(buffer) }
   val indices = Array.fill(buffer.getInt) { buffer.getShort }
   val materials = Array.fill(buffer.getInt) { new PMDMaterial(buffer) }
@@ -53,38 +54,22 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       None
     }
   }
-
-  val posBufferID = {
-    val buffer = BufferUtils.createFloatBuffer(vertices.length * 3)
+  val vertexBuffer = {
+    val buffer = BufferUtils.createFloatBuffer(vertices.length * 8)
     vertices.foreach(v => {
       buffer.put(v.pos.x)
       buffer.put(v.pos.y)
       buffer.put(v.pos.z)
-    })
-    buffer.flip
-    glLoadBufferObject(GL_ARRAY_BUFFER_ARB, buffer)
-  }
-  val normalBufferID = {
-    val buffer = BufferUtils.createFloatBuffer(vertices.length * 3)
-    vertices.foreach(v => {
       buffer.put(v.normal.x)
       buffer.put(v.normal.y)
       buffer.put(v.normal.z)
-    })
-    buffer.flip
-    glLoadBufferObject(GL_ARRAY_BUFFER_ARB, buffer)
-  }
-  val uvBufferID = {
-    val buffer = BufferUtils.createFloatBuffer(vertices.length * 3)
-    vertices.foreach(v => {
       buffer.put(v.uv.u)
       buffer.put(v.uv.v)
     })
     buffer.flip
     glLoadBufferObject(GL_ARRAY_BUFFER_ARB, buffer)
   }
-
-  val indexBufferID = {
+  val indexBuffer = {
     val buffer = BufferUtils.createShortBuffer(indices.length)
     buffer.put(indices)
     buffer.flip
@@ -93,18 +78,17 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
   def render = {
     glEnable(GL_DEPTH_TEST)
-    glEnable(GL_LIGHTING)
+    //glEnable(GL_LIGHTING)
+    glDisable(GL_LIGHTING)
 
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
     glEnableClientState(GL_TEXTURE_COORD_ARRAY)
 
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, posBufferID)
-    glVertexPointer(3, GL_FLOAT, 0, 0)
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, normalBufferID)
-    glNormalPointer(GL_FLOAT, 0, 0)
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, uvBufferID)
-    glTexCoordPointer(2, GL_FLOAT, 0, 0)
+    glBindBufferARB(GL_ARRAY_BUFFER_ARB, vertexBuffer)
+    glVertexPointer(3, GL_FLOAT, VERTEX_BUFFER_STRIDE, 0)
+    glNormalPointer(GL_FLOAT, VERTEX_BUFFER_STRIDE, 3 * 4)
+    glTexCoordPointer(2, GL_FLOAT, VERTEX_BUFFER_STRIDE, 6 * 4)
 
     var index = 0
     materials.indices.foreach { i =>
@@ -117,9 +101,9 @@ class PMDModel(file: File, buffer: ByteBuffer) {
         case None =>
           glDisable(GL_TEXTURE_2D)
       }
-      glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, indexBufferID)
+      glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, indexBuffer)
       glDrawRangeElements(GL_TRIANGLES, 0, vertices.length - 1, m.faceVertCount,
-                          GL_UNSIGNED_SHORT, index << 1)
+        GL_UNSIGNED_SHORT, index << 1)
       index += m.faceVertCount
     }
 
@@ -144,7 +128,7 @@ class PMDHeaderEg(buffer: ByteBuffer, model: PMDModel) {
   val modelName = buffer.getString(20)
   val comment = buffer.getString(256)
   val boneNameEg = Array.fill(model.bones.length) { buffer.getString(20) }
-  val skinNameEg = Array.fill(model.skins.length-1) { buffer.getString(20) }
+  val skinNameEg = Array.fill(model.skins.length - 1) { buffer.getString(20) }
   val dispNameEg = Array.fill(model.boneDispName.length) { buffer.getString(50) }
 }
 
