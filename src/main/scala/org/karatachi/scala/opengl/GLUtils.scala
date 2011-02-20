@@ -6,13 +6,20 @@ import java.nio._
 import org.lwjgl._
 import org.lwjgl.opengl._
 import org.lwjgl.opengl.GL11._
-import org.lwjgl.opengl.ARBBufferObject._
-import org.lwjgl.opengl.ARBVertexBufferObject._
+import org.lwjgl.opengl.GL15._
+import org.lwjgl.opengl.GL20._
 import org.newdawn.slick._
 import org.newdawn.slick.opengl._
 import org.newdawn.slick.font.effects._
 
 object GLUtils {
+  def isSupport(): Boolean = {
+    val caps = GLContext.getCapabilities
+    // caps.GL_EXT_framebuffer_object || 
+    caps.GL_ARB_vertex_buffer_object
+    caps.GL_ARB_vertex_shader
+  }
+
   val defaultFont: UnicodeFont = {
     import java.awt.{ GraphicsEnvironment, Font }
 
@@ -77,27 +84,51 @@ object GLUtils {
   }
 
   def glLoadBufferObject(target: Int, buffer: ShortBuffer): Int = {
-    val id = glGenBuffersARB
-    glBindBufferARB(target, id)
-    glBufferDataARB(target, buffer, GL_STATIC_DRAW_ARB)
-    glBindBufferARB(target, 0)
+    val id = glGenBuffers
+    glBindBuffer(target, id)
+    glBufferData(target, buffer, GL_DYNAMIC_DRAW)
+    glBindBuffer(target, 0)
     id
   }
 
   def glLoadBufferObject(target: Int, buffer: IntBuffer): Int = {
-    val id = glGenBuffersARB
-    glBindBufferARB(target, id)
-    glBufferDataARB(target, buffer, GL_STATIC_DRAW_ARB)
-    glBindBufferARB(target, 0)
+    val id = glGenBuffers
+    glBindBuffer(target, id)
+    glBufferData(target, buffer, GL_DYNAMIC_DRAW)
+    glBindBuffer(target, 0)
     id
   }
 
   def glLoadBufferObject(target: Int, buffer: FloatBuffer): Int = {
-    val id = glGenBuffersARB
-    glBindBufferARB(target, id)
-    glBufferDataARB(target, buffer, GL_STATIC_DRAW_ARB)
-    glBindBufferARB(target, 0)
+    val id = glGenBuffers
+    glBindBuffer(target, id)
+    glBufferData(target, buffer, GL_DYNAMIC_DRAW)
+    glBindBuffer(target, 0)
     id
+  }
+
+  def glLoadShaderObject(target: Int, code: String): Int = {
+    val id = glCreateShader(target)
+    glShaderSource(id, code)
+    glCompileShader(id)
+    glPrintShaderLog(id)
+    id
+  }
+
+  def glPrintShaderLog(id: Int): Unit = {
+    val size = glGetShader(id, GL_INFO_LOG_LENGTH);
+    if (size > 0) {
+      println("Info log:")
+      println(glGetShaderInfoLog(id, size))
+    }
+  }
+
+  def glPrintProgramLog(id: Int): Unit = {
+    val size = glGetProgram(id, GL_INFO_LOG_LENGTH);
+    if (size > 0) {
+      println("Info log:")
+      println(glGetProgramInfoLog(id, size))
+    }
   }
 
   def glMatrix(block: => Unit) = {

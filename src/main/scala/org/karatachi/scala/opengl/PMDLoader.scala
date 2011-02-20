@@ -8,11 +8,12 @@ import org.lwjgl._
 import org.lwjgl.opengl._
 import org.lwjgl.opengl.GL11._
 import org.lwjgl.opengl.GL12._
-import org.lwjgl.opengl.ARBBufferObject._
-import org.lwjgl.opengl.ARBVertexBufferObject._
+import org.lwjgl.opengl.GL15._
+import org.lwjgl.opengl.GL20._
 import org.newdawn.slick.opengl._
 import org.karatachi.scala.IOUtils._
 import org.karatachi.scala.opengl.GLUtils._
+import org.karatachi.scala.opengl.ShaderProgram._
 
 object PMDLoader {
   def load(path: String): PMDModel = {
@@ -31,8 +32,6 @@ class PMDFormatException extends Exception {
 }
 
 class PMDModel(file: File, buffer: ByteBuffer) {
-  val VERTEX_BUFFER_STRIDE = 8 * 4;
-
   val basedir = file.getParent
 
   val header = new PMDHeader(buffer)
@@ -54,8 +53,14 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       None
     }
   }
-  val vertexBuffer = {
-    val buffer = BufferUtils.createFloatBuffer(vertices.length * 8)
+
+  skins.indices.foreach { i => println(i + ":" + skins(i).skinName + ":" + skins(i).skinType) }
+
+  val VERTEX_ELEMENTS = 8
+  val VERTEX_BUFFER_STRIDE = VERTEX_ELEMENTS * 4;
+
+  private val vertexBufferRaw = {
+    val buffer = BufferUtils.createFloatBuffer(vertices.length * VERTEX_ELEMENTS)
     vertices.foreach(v => {
       buffer.put(v.pos.x)
       buffer.put(v.pos.y)
@@ -67,25 +72,45 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       buffer.put(v.uv.v)
     })
     buffer.flip
-    glLoadBufferObject(GL_ARRAY_BUFFER_ARB, buffer)
+    buffer
+  }
+  val vertexBuffer = {
+    glLoadBufferObject(GL_ARRAY_BUFFER, vertexBufferRaw)
   }
   val indexBuffer = {
     val buffer = BufferUtils.createShortBuffer(indices.length)
     buffer.put(indices)
     buffer.flip
-    glLoadBufferObject(GL_ELEMENT_ARRAY_BUFFER_ARB, buffer)
+    glLoadBufferObject(GL_ELEMENT_ARRAY_BUFFER, buffer)
   }
+
+  var activeSkins = List(1)
+  var skinEffect = 0.0f
 
   def render = {
     glEnable(GL_DEPTH_TEST)
-    //glEnable(GL_LIGHTING)
-    glDisable(GL_LIGHTING)
 
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
     glEnableClientState(GL_TEXTURE_COORD_ARRAY)
 
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, vertexBuffer)
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer)
+    skins(0).skinVertData.foreach { v =>
+      val index = v.skinVertIndex * VERTEX_ELEMENTS
+      vertexBufferRaw.put(index + 0, v.skinVertPos.x)
+      vertexBufferRaw.put(index + 1, v.skinVertPos.y)
+      vertexBufferRaw.put(index + 2, v.skinVertPos.z)
+    }
+    activeSkins.foreach { i =>
+      skins(i).skinVertData.foreach { v =>
+        val index = skins(0).skinVertData(v.skinVertIndex).skinVertIndex * VERTEX_ELEMENTS
+        vertexBufferRaw.put(index + 0, vertexBufferRaw.get(index + 0) + v.skinVertPos.x * skinEffect)
+        vertexBufferRaw.put(index + 1, vertexBufferRaw.get(index + 1) + v.skinVertPos.y * skinEffect)
+        vertexBufferRaw.put(index + 2, vertexBufferRaw.get(index + 2) + v.skinVertPos.z * skinEffect)
+      }
+    }
+    glBufferData(GL_ARRAY_BUFFER, vertexBufferRaw, GL_DYNAMIC_DRAW)
+
     glVertexPointer(3, GL_FLOAT, VERTEX_BUFFER_STRIDE, 0)
     glNormalPointer(GL_FLOAT, VERTEX_BUFFER_STRIDE, 3 * 4)
     glTexCoordPointer(2, GL_FLOAT, VERTEX_BUFFER_STRIDE, 6 * 4)
@@ -96,12 +121,13 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       glColor3f(m.material.diffuse.r, m.material.diffuse.g, m.material.diffuse.b)
       textures(i) match {
         case Some(a) =>
-          glEnable(GL_TEXTURE_2D)
+          ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, 1)))
           a.bind
         case None =>
-          glDisable(GL_TEXTURE_2D)
+          ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, 0)))
+          glBindTexture(GL_TEXTURE_2D, 0)
       }
-      glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, indexBuffer)
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer)
       glDrawRangeElements(GL_TRIANGLES, 0, vertices.length - 1, m.faceVertCount,
         GL_UNSIGNED_SHORT, index << 1)
       index += m.faceVertCount
@@ -110,6 +136,8 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     glDisableClientState(GL_VERTEX_ARRAY)
     glDisableClientState(GL_NORMAL_ARRAY)
     glDisableClientState(GL_TEXTURE_COORD_ARRAY)
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0)
   }
 }
 
@@ -187,7 +215,7 @@ class PMDBoneDisp(buffer: ByteBuffer) {
 class XVector(buffer: ByteBuffer) {
   val x = buffer.getFloat
   val y = buffer.getFloat
-  val z = -buffer.getFloat
+  val z = buffer.getFloat
 }
 
 class XCoords2d(buffer: ByteBuffer) {
