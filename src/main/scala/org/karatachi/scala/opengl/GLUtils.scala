@@ -35,19 +35,19 @@ object GLUtils {
     font
   }
 
-  def glLoadFontGlyphs = {
+  def glLoadFontGlyphs(): Unit = {
     defaultFont.clearGlyphs
     defaultFont.addNeheGlyphs
     defaultFont.loadGlyphs
   }
 
-  def glDrawString(x: Float, y: Float, str: String, color: Color) = {
+  def glDrawString(x: Float, y: Float, str: String, color: Color): Unit = {
     glDisable(GL_DEPTH_TEST)
     glDisable(GL_LIGHTING)
     defaultFont.drawString(x, y, str, color)
   }
 
-  def glDrawImage(x: Float, y: Float, w: Float, h: Float, texture: Int) = {
+  def glDrawImage(x: Float, y: Float, w: Float, h: Float, texture: Int): Unit = {
     glOrthogonal {
       glDisable(GL_DEPTH_TEST)
       glDisable(GL_LIGHTING)
@@ -69,7 +69,7 @@ object GLUtils {
     }
   }
 
-  def glDrawImage(x: Float, y: Float, texture: Texture) = {
+  def glDrawImage(x: Float, y: Float, texture: Texture): Unit = {
     glOrthogonal {
       glDisable(GL_DEPTH_TEST)
       glDisable(GL_LIGHTING)
@@ -160,13 +160,13 @@ object GLUtils {
     }
   }
 
-  def glMatrix(block: => Unit) = {
+  def glMatrix(block: => Unit): Unit = {
     glPushMatrix
     block
     glPopMatrix
   }
 
-  def glOrthogonal(block: => Unit) = {
+  def glOrthogonal(block: => Unit): Unit = {
     val displayMode = Display.getDisplayMode
     glMatrixMode(GL_PROJECTION)
     glPushMatrix
