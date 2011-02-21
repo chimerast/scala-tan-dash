@@ -47,45 +47,48 @@ object GLUtils {
     defaultFont.drawString(x, y, str, color)
   }
 
-
   def glDrawImage(x: Float, y: Float, w: Float, h: Float, texture: Int) = {
-    glDisable(GL_DEPTH_TEST)
-    glDisable(GL_LIGHTING)
-    glEnable(GL_TEXTURE_2D)
-    glColor3f(1.0f, 1.0f, 1.0f)
-    glBindTexture(GL_TEXTURE_2D, texture)
-    glRender(GL_QUADS) {
-      glTexCoord2f(0.0f, 1.0f)
-      glVertex2f(x, y)
-      glTexCoord2f(1.0f, 1.0f)
-      glVertex2f(x + w, y)
-      glTexCoord2f(1.0f, 0.0f)
-      glVertex2f(x + w, y + h)
-      glTexCoord2f(0.0f, 0.0f)
-      glVertex2f(x, y + h)
+    glOrthogonal {
+      glDisable(GL_DEPTH_TEST)
+      glDisable(GL_LIGHTING)
+      glEnable(GL_TEXTURE_2D)
+      glColor3f(1.0f, 1.0f, 1.0f)
+      glBindTexture(GL_TEXTURE_2D, texture)
+      glRender(GL_QUADS) {
+        glTexCoord2f(0.0f, 1.0f)
+        glVertex2f(x, y)
+        glTexCoord2f(1.0f, 1.0f)
+        glVertex2f(x + w, y)
+        glTexCoord2f(1.0f, 0.0f)
+        glVertex2f(x + w, y + h)
+        glTexCoord2f(0.0f, 0.0f)
+        glVertex2f(x, y + h)
+      }
+      glDisable(GL_TEXTURE_2D)
+      glBindTexture(GL_TEXTURE_2D, 0)
     }
-    glDisable(GL_TEXTURE_2D)
-    glBindTexture(GL_TEXTURE_2D, 0)
   }
 
   def glDrawImage(x: Float, y: Float, texture: Texture) = {
-    glDisable(GL_DEPTH_TEST)
-    glDisable(GL_LIGHTING)
-    glEnable(GL_TEXTURE_2D)
-    glColor3f(1.0f, 1.0f, 1.0f)
-    texture.bind
-    glRender(GL_QUADS) {
-      glTexCoord2f(0.0f, 0.0f)
-      glVertex2f(x, y)
-      glTexCoord2f(1.0f, 0.0f)
-      glVertex2f(x + texture.getTextureWidth, y)
-      glTexCoord2f(1.0f, 1.0f)
-      glVertex2f(x + texture.getTextureWidth, y + texture.getTextureHeight)
-      glTexCoord2f(0.0f, 1.0f)
-      glVertex2f(x, y + texture.getTextureHeight)
+    glOrthogonal {
+      glDisable(GL_DEPTH_TEST)
+      glDisable(GL_LIGHTING)
+      glEnable(GL_TEXTURE_2D)
+      glColor3f(1.0f, 1.0f, 1.0f)
+      texture.bind
+      glRender(GL_QUADS) {
+        glTexCoord2f(0.0f, 0.0f)
+        glVertex2f(x, y)
+        glTexCoord2f(1.0f, 0.0f)
+        glVertex2f(x + texture.getTextureWidth, y)
+        glTexCoord2f(1.0f, 1.0f)
+        glVertex2f(x + texture.getTextureWidth, y + texture.getTextureHeight)
+        glTexCoord2f(0.0f, 1.0f)
+        glVertex2f(x, y + texture.getTextureHeight)
+      }
+      glDisable(GL_TEXTURE_2D)
+      glBindTexture(GL_TEXTURE_2D, 0)
     }
-    glDisable(GL_TEXTURE_2D)
-    glBindTexture(GL_TEXTURE_2D, 0)
   }
 
   def glLightfv(light: Int, pname: Int, params: Array[Float]): Unit = {

@@ -6,6 +6,7 @@ import org.lwjgl.opengl.GL11._
 import org.lwjgl.opengl.GL20._
 import org.lwjgl.util.glu.Project._
 import org.lwjgl.input._
+import org.karatachi.scala.opengl._
 import org.karatachi.scala.opengl.GLUtils._
 
 object ScalaTanDash {
@@ -26,7 +27,7 @@ object ScalaTanDash {
 
     checkSupport
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
+    glClearColor(0.6f, 0.8f, 1.0f, 0.0f)
 
     glViewport(0, 0, WIDTH, HEIGHT)
 
@@ -36,8 +37,7 @@ object ScalaTanDash {
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity
-    //gluLookAt(5.0f, 2.0f, 5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
-    gluLookAt(0.0f, -0.2f, 7.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+    gluLookAt(0.0f, 1.5f, 7.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
 
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -62,7 +62,7 @@ object ScalaTanDash {
     while (!terminated) {
       val curr = System.nanoTime
 
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
       scene.delta = (curr - prev) / 1000000000.0f
       scene.time += scene.delta
@@ -75,6 +75,8 @@ object ScalaTanDash {
 
       prev = curr
 
+      if (Keyboard.isKeyDown(Keyboard.KEY_SPACE))
+        ShaderProgram.reload
       if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE))
         terminated = true
       if (Display.isCloseRequested)

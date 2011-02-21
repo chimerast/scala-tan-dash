@@ -10,6 +10,7 @@ import org.karatachi.scala.IOUtils._
 import org.karatachi.scala.opengl.GLUtils._
 
 object ShaderProgram {
+  var rootpath = ""
   var active: Option[ShaderProgram] = None
   var programs = Map[String, ShaderProgram]()
 
@@ -17,6 +18,13 @@ object ShaderProgram {
     val program = new ShaderProgram(path)
     programs += (name -> program)
     program
+  }
+
+  def reload(): Unit = {
+    programs = programs.map { e =>
+      e._2.release
+      (e._1 -> new ShaderProgram(e._2.path))
+    }
   }
 
   def bind(name: String): Unit = {
@@ -32,13 +40,14 @@ object ShaderProgram {
   }
 }
 
-class ShaderProgram(path: Array[String]) {
+class ShaderProgram(val path: Array[String]) {
   private val program = glCreateProgram
 
   path.foreach(attach)
   glLinkProgram(program)
   glValidateProgram(program)
   glPrintProgramLog(program)
+  program
 
   private val uniforms = {
     val maxLength = glGetProgram(program, GL_ACTIVE_UNIFORM_MAX_LENGTH)
@@ -53,13 +62,13 @@ class ShaderProgram(path: Array[String]) {
 
   def attach(path: String): Unit = {
     using {
-      var in = getClass().getResourceAsStream(path)
+      var in = getClass().getResourceAsStream(ShaderProgram.rootpath + "/" + path)
       if (in == null) {
-        val file = new File(path)
+        val file = new File(ShaderProgram.rootpath + "/" + path)
         if (file.isFile) {
           in = new FileInputStream(file)
         } else {
-          throw new FileNotFoundException(path)
+          throw new FileNotFoundException(ShaderProgram.rootpath + "/" + path)
         }
       }
       in

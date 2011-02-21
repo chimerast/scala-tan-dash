@@ -27,18 +27,50 @@ trait Scene {
 class OpeningScene extends Scene {
   override val layers: List[Layer] = List(new DebugLayer)
 
-  var model: PMDModel = null
+  var yukari: PMDModel = null
+  var ran: PMDModel = null
   var texture: Texture = null
 
   override def init = {
     glLoadFontGlyphs
-    model = PMDLoader.load("resources/kask_yukari/kask_yukari.pmd")
-    //model = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
+    yukari = PMDLoader.load("resources/kask_yukari/kask_yukari.pmd")
+    ran = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
     texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
+
     FrameBuffer.create("NormalAndDepth", 800, 600)
-    ShaderProgram.load("ToonShader", Array("/shader/screen.vert", "/shader/screen.frag"))
-    ShaderProgram.load("NormalAndDepth", Array("/shader/NormalAndDepth.vert", "/shader/NormalAndDepth.frag"))
-    ShaderProgram.load("Composition", Array("/shader/Composition.vert", "/shader/Composition.frag"))
+
+    ShaderProgram.rootpath = "src/main/resources/shader";
+    ShaderProgram.load("ToonShader", Array("ToonShader.vert", "ToonShader.frag"))
+    ShaderProgram.load("NormalAndDepth", Array("NormalAndDepth.vert", "NormalAndDepth.frag"))
+    ShaderProgram.load("Composition", Array("Composition.vert", "Composition.frag"))
+  }
+
+  def draw = {
+    glMatrix {
+      glTranslatef(1.0f, 0.0f, 0.0f)
+      glScalef(0.10f, 0.10f, 0.10f)
+      glRotatef(time*60, 0.0f, 1.0f, 0.0f)
+      yukari.activeSkins = List(5, 16)
+      yukari.skinEffect = math.sin(time*3).toFloat
+      yukari.render
+    }
+    glMatrix {
+      glTranslatef(-1.0f, 0.0f, 0.0f)
+      glScalef(0.10f, 0.10f, 0.10f)
+      glRotatef(time*60, 0.0f, 1.0f, 0.0f)
+      ran.activeSkins = List(5, 16)
+      ran.skinEffect = math.sin(time*3).toFloat
+      ran.render
+    }
+    glMatrix {
+      glRender(GL_QUADS) {
+        glColor3f(0.3f, 0.3f, 0.7f)
+        glVertex3f(4.0f, 0.0f, -4.0f)
+        glVertex3f(4.0f, 0.0f, 4.0f)
+        glVertex3f(-4.0f, 0.0f, 4.0f)
+        glVertex3f(-4.0f, 0.0f, -4.0f)
+      }
+    }
   }
 
   override def update = {
@@ -47,43 +79,22 @@ class OpeningScene extends Scene {
   override def render = {
     FrameBuffer.bind("NormalAndDepth")
     ShaderProgram.bind("NormalAndDepth")
-    glMatrix {
-      glDisable(GL_BLEND)
-      glColor3f(0.0f, 0.0f, 1.0f)
-      glTranslatef(0.0f, -1.5f, 0.0f)
-      glScalef(0.15f, 0.15f, 0.15f)
-      glRotatef(time*60, 0.0f, 1.0f, 0.0f)
-      model.activeSkins = List(5, 16)
-      model.skinEffect = math.sin(time).toFloat
-      model.render
-      glEnable(GL_BLEND)
-    }
+    glDisable(GL_BLEND)
+    draw
+    glEnable(GL_BLEND)
     ShaderProgram.unbind
     FrameBuffer.unbind
 
     ShaderProgram.bind("ToonShader")
-    glMatrix {
-      glDisable(GL_BLEND)
-      glColor3f(0.0f, 0.0f, 1.0f)
-      glTranslatef(0.0f, -1.5f, 0.0f)
-      glScalef(0.15f, 0.15f, 0.15f)
-      glRotatef(time*60, 0.0f, 1.0f, 0.0f)
-      model.activeSkins = List(5, 16)
-      model.skinEffect = math.sin(time).toFloat
-      model.render
-      glEnable(GL_BLEND)
-    }
+    draw
     ShaderProgram.unbind
 
     ShaderProgram.bind("Composition")
-    glOrthogonal {
-      glDrawImage(0, 0, 800, 600, FrameBuffer.texture("NormalAndDepth"))
-    }
+    glDrawImage(0, 0, 800, 600, FrameBuffer.texture("NormalAndDepth"))
     ShaderProgram.unbind
 
-    glOrthogonal {
-      glDrawImage(0, 0, texture)
-    }
+    glDrawImage(0, 0, texture)
+
     super.render
   }
 }
