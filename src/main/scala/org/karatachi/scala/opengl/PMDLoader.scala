@@ -61,7 +61,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
   private val vertexBufferRaw = {
     val buffer = BufferUtils.createFloatBuffer(vertices.length * VERTEX_ELEMENTS)
-    vertices.foreach(v => {
+    vertices.foreach { v =>
       buffer.put(v.pos.x)
       buffer.put(v.pos.y)
       buffer.put(v.pos.z)
@@ -70,7 +70,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       buffer.put(v.normal.z)
       buffer.put(v.uv.u)
       buffer.put(v.uv.v)
-    })
+    }
     buffer.flip
     buffer
   }
@@ -104,9 +104,12 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     activeSkins.foreach { i =>
       skins(i).skinVertData.foreach { v =>
         val index = skins(0).skinVertData(v.skinVertIndex).skinVertIndex * VERTEX_ELEMENTS
-        vertexBufferRaw.put(index + 0, vertexBufferRaw.get(index + 0) + v.skinVertPos.x * skinEffect)
-        vertexBufferRaw.put(index + 1, vertexBufferRaw.get(index + 1) + v.skinVertPos.y * skinEffect)
-        vertexBufferRaw.put(index + 2, vertexBufferRaw.get(index + 2) + v.skinVertPos.z * skinEffect)
+        vertexBufferRaw.put(index + 0,
+                            vertexBufferRaw.get(index + 0) + v.skinVertPos.x * skinEffect)
+        vertexBufferRaw.put(index + 1,
+                            vertexBufferRaw.get(index + 1) + v.skinVertPos.y * skinEffect)
+        vertexBufferRaw.put(index + 2,
+                            vertexBufferRaw.get(index + 2) + v.skinVertPos.z * skinEffect)
       }
     }
     glBufferData(GL_ARRAY_BUFFER, vertexBufferRaw, GL_DYNAMIC_DRAW)
@@ -121,10 +124,10 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       glColor3f(m.material.diffuse.r, m.material.diffuse.g, m.material.diffuse.b)
       textures(i) match {
         case Some(a) =>
-          ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, 1)))
+          ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, GL_TRUE)))
           a.bind
         case None =>
-          ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, 0)))
+          ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, GL_FALSE)))
           glBindTexture(GL_TEXTURE_2D, 0)
       }
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer)

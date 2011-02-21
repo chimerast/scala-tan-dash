@@ -24,10 +24,7 @@ object ScalaTanDash {
     Display.setDisplayMode(new DisplayMode(WIDTH, HEIGHT))
     Display.create
 
-    println("Vendor: " + glGetString(GL_VENDOR))
-    println("GPU: " + glGetString(GL_RENDERER))
-    println("OpenGL: " + glGetString(GL_VERSION))
-    println("GLSL: " + glGetString(GL_SHADING_LANGUAGE_VERSION))
+    checkSupport
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
 
@@ -45,7 +42,7 @@ object ScalaTanDash {
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    var lightPosition = Array(-3.0f, 1.0f, 5.0f, 0.0f)
+    var lightPosition = Array(3.0f, 1.0f, 5.0f, 0.0f)
     var lightDiffuse = Array(1.0f, 1.0f, 1.0f, 1,0f)
     var lightAmbient = Array(0.8f, 0.8f, 0.8f, 1,0f)
     var lightSpecular = Array(0.0f, 0.0f, 0.0f, 1,0f)

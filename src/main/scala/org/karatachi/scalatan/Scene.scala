@@ -29,23 +29,26 @@ class OpeningScene extends Scene {
 
   var model: PMDModel = null
   var texture: Texture = null
-  var program: ShaderProgram = null
 
   override def init = {
     glLoadFontGlyphs
     model = PMDLoader.load("resources/kask_yukari/kask_yukari.pmd")
     //model = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
     texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
-    program = ShaderLoader.load(Array("/shader/screen.vert", "/shader/screen.frag"))
+    FrameBuffer.create("NormalAndDepth", 800, 600)
+    ShaderProgram.load("ToonShader", Array("/shader/screen.vert", "/shader/screen.frag"))
+    ShaderProgram.load("NormalAndDepth", Array("/shader/NormalAndDepth.vert", "/shader/NormalAndDepth.frag"))
+    ShaderProgram.load("Composition", Array("/shader/Composition.vert", "/shader/Composition.frag"))
   }
 
   override def update = {
   }
 
   override def render = {
-    program.bind
+    FrameBuffer.bind("NormalAndDepth")
+    ShaderProgram.bind("NormalAndDepth")
     glMatrix {
-      glDisable(GL_TEXTURE_2D)
+      glDisable(GL_BLEND)
       glColor3f(0.0f, 0.0f, 1.0f)
       glTranslatef(0.0f, -1.5f, 0.0f)
       glScalef(0.15f, 0.15f, 0.15f)
@@ -53,8 +56,30 @@ class OpeningScene extends Scene {
       model.activeSkins = List(5, 16)
       model.skinEffect = math.sin(time).toFloat
       model.render
+      glEnable(GL_BLEND)
     }
-    program.release
+    ShaderProgram.unbind
+    FrameBuffer.unbind
+
+    ShaderProgram.bind("ToonShader")
+    glMatrix {
+      glDisable(GL_BLEND)
+      glColor3f(0.0f, 0.0f, 1.0f)
+      glTranslatef(0.0f, -1.5f, 0.0f)
+      glScalef(0.15f, 0.15f, 0.15f)
+      glRotatef(time*60, 0.0f, 1.0f, 0.0f)
+      model.activeSkins = List(5, 16)
+      model.skinEffect = math.sin(time).toFloat
+      model.render
+      glEnable(GL_BLEND)
+    }
+    ShaderProgram.unbind
+
+    ShaderProgram.bind("Composition")
+    glOrthogonal {
+      glDrawImage(0, 0, 800, 600, FrameBuffer.texture("NormalAndDepth"))
+    }
+    ShaderProgram.unbind
 
     glOrthogonal {
       glDrawImage(0, 0, texture)

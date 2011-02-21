@@ -13,11 +13,14 @@ import org.newdawn.slick.opengl._
 import org.newdawn.slick.font.effects._
 
 object GLUtils {
-  def isSupport(): Boolean = {
+  def checkSupport(): Unit = {
     val caps = GLContext.getCapabilities
-    // caps.GL_EXT_framebuffer_object || 
-    caps.GL_ARB_vertex_buffer_object
-    caps.GL_ARB_vertex_shader
+
+    println("Vendor: " + glGetString(GL_VENDOR))
+    println("GPU: " + glGetString(GL_RENDERER))
+    println("OpenGL: " + glGetString(GL_VERSION))
+    println("GLSL: " + glGetString(GL_SHADING_LANGUAGE_VERSION))
+    println("framebuffer_object: " +  caps.GL_EXT_framebuffer_object)
   }
 
   val defaultFont: UnicodeFont = {
@@ -44,6 +47,27 @@ object GLUtils {
     defaultFont.drawString(x, y, str, color)
   }
 
+
+  def glDrawImage(x: Float, y: Float, w: Float, h: Float, texture: Int) = {
+    glDisable(GL_DEPTH_TEST)
+    glDisable(GL_LIGHTING)
+    glEnable(GL_TEXTURE_2D)
+    glColor3f(1.0f, 1.0f, 1.0f)
+    glBindTexture(GL_TEXTURE_2D, texture)
+    glRender(GL_QUADS) {
+      glTexCoord2f(0.0f, 1.0f)
+      glVertex2f(x, y)
+      glTexCoord2f(1.0f, 1.0f)
+      glVertex2f(x + w, y)
+      glTexCoord2f(1.0f, 0.0f)
+      glVertex2f(x + w, y + h)
+      glTexCoord2f(0.0f, 0.0f)
+      glVertex2f(x, y + h)
+    }
+    glDisable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, 0)
+  }
+
   def glDrawImage(x: Float, y: Float, texture: Texture) = {
     glDisable(GL_DEPTH_TEST)
     glDisable(GL_LIGHTING)
@@ -60,6 +84,8 @@ object GLUtils {
       glTexCoord2f(0.0f, 1.0f)
       glVertex2f(x, y + texture.getTextureHeight)
     }
+    glDisable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, 0)
   }
 
   def glLightfv(light: Int, pname: Int, params: Array[Float]): Unit = {
