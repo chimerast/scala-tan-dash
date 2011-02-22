@@ -16,9 +16,11 @@ object ScalaTanDash {
   val HEIGHT = 600
 
   var terminated = false
-  var scene: Scene = new OpeningScene
+  var scene: Scene = new LoadingScene(new OpeningScene)
 
   def init(fullscreen: Boolean) {
+    System.setProperty("org.newdawn.slick.pngloader", "false")
+
     Display.setTitle(GAME_TITLE)
     Display.setFullscreen(fullscreen)
     Display.setVSyncEnabled(true)
@@ -26,8 +28,6 @@ object ScalaTanDash {
     Display.create
 
     checkSupport
-
-    glClearColor(0.6f, 0.8f, 1.0f, 0.0f)
 
     glViewport(0, 0, WIDTH, HEIGHT)
 
@@ -44,8 +44,8 @@ object ScalaTanDash {
 
     var lightPosition = Array(3.0f, 1.0f, 5.0f, 0.0f)
     var lightDiffuse = Array(1.0f, 1.0f, 1.0f, 1,0f)
-    var lightAmbient = Array(0.8f, 0.8f, 0.8f, 1,0f)
-    var lightSpecular = Array(0.0f, 0.0f, 0.0f, 1,0f)
+    var lightAmbient = Array(0.0f, 0.0f, 0.0f, 1,0f)
+    var lightSpecular = Array(0.6f, 0.6f, 0.6f, 1,0f)
 
     glEnable(GL_LIGHT0)
     glLightfv(GL_LIGHT0, GL_POSITION, lightPosition)
@@ -53,7 +53,7 @@ object ScalaTanDash {
     glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
     glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
 
-    //glEnable(GL_CULL_FACE)
+    // glEnable(GL_CULL_FACE)
   }
 
   def run() {
@@ -68,10 +68,11 @@ object ScalaTanDash {
       scene.time += scene.delta
       scene.update
       scene.render
-      scene = scene.next
 
       Display.sync(FRAMERATE)
       Display.update
+
+      scene = scene.next
 
       prev = curr
 

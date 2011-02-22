@@ -3,7 +3,9 @@ package org.karatachi.scalatan
 import org.lwjgl._
 import org.lwjgl.opengl._
 import org.lwjgl.opengl.GL11._
+import org.lwjgl.opengl.GL20._
 import org.lwjgl.util.glu.Project._
+import org.newdawn.slick._
 import org.newdawn.slick.opengl._
 import org.karatachi.scala.opengl._
 import org.karatachi.scala.opengl.GLUtils._
@@ -13,15 +15,37 @@ trait Scene {
   var delta: Float = 0.0f
   var time: Float = 0.0f
 
-  def init
+  def init(): Unit
 
-  def update
+  def update(): Unit
 
-  def render = {
+  def render(): Unit = {
     layers.foreach(_.render(this))
   }
 
   def next(): Scene = this
+}
+
+class LoadingScene(next: Scene) extends Scene {
+  override val layers: List[Layer] = List()
+
+  override def init(): Unit = {
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
+
+    glLoadFontGlyphs
+  }
+
+  override def update(): Unit = {
+  }
+
+  override def render(): Unit = {
+    glDrawString(10, 10, "Now Loading...", Color.white)
+  }
+
+  override def next(): Scene = {
+    next.init
+    next
+  }
 }
 
 class OpeningScene extends Scene {
@@ -29,12 +53,16 @@ class OpeningScene extends Scene {
 
   var yukari: PMDModel = null
   var ran: PMDModel = null
+  var miku: PMDModel = null
   var texture: Texture = null
 
   override def init = {
-    glLoadFontGlyphs
-    yukari = PMDLoader.load("resources/kask_yukari/kask_yukari.pmd")
-    ran = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
+    glClearColor(0.6f, 0.8f, 1.0f, 0.0f)
+
+    //yukari = PMDLoader.load("resources/kask_yukari/kask_yukari.pmd")
+    //ran = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
+    miku = PMDLoader.load("resources/Lat式ミクVer2.3/Lat式ミクVer2.3_Normal.pmd")
+
     texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
 
     FrameBuffer.create("NormalAndDepth", 800, 600)
@@ -46,6 +74,7 @@ class OpeningScene extends Scene {
   }
 
   def draw = {
+/*
     glMatrix {
       glTranslatef(1.0f, 0.0f, 0.0f)
       glScalef(0.10f, 0.10f, 0.10f)
@@ -54,6 +83,16 @@ class OpeningScene extends Scene {
       yukari.skinEffect = math.sin(time*3).toFloat
       yukari.render
     }
+*/
+    glMatrix {
+      glTranslatef(0.0f, 0.0f, 0.0f)
+      glScalef(0.10f, 0.10f, 0.10f)
+      glRotatef(time*60, 0.0f, 1.0f, 0.0f)
+      miku.activeSkins = List(5, 16)
+      miku.skinEffect = math.sin(time*3).toFloat
+      miku.render
+    }
+/*
     glMatrix {
       glTranslatef(-1.0f, 0.0f, 0.0f)
       glScalef(0.10f, 0.10f, 0.10f)
@@ -62,13 +101,14 @@ class OpeningScene extends Scene {
       ran.skinEffect = math.sin(time*3).toFloat
       ran.render
     }
+*/
     glMatrix {
       glRender(GL_QUADS) {
         glColor3f(0.3f, 0.3f, 0.7f)
         glVertex3f(4.0f, 0.0f, -4.0f)
-        glVertex3f(4.0f, 0.0f, 4.0f)
-        glVertex3f(-4.0f, 0.0f, 4.0f)
         glVertex3f(-4.0f, 0.0f, -4.0f)
+        glVertex3f(-4.0f, 0.0f, 4.0f)
+        glVertex3f(4.0f, 0.0f, 4.0f)
       }
     }
   }

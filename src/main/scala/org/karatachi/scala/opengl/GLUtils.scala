@@ -42,9 +42,11 @@ object GLUtils {
   }
 
   def glDrawString(x: Float, y: Float, str: String, color: Color): Unit = {
-    glDisable(GL_DEPTH_TEST)
-    glDisable(GL_LIGHTING)
-    defaultFont.drawString(x, y, str, color)
+    glOrthogonal {
+      glDisable(GL_DEPTH_TEST)
+      glDisable(GL_LIGHTING)
+      defaultFont.drawString(x, y, str, color)
+    }
   }
 
   def glDrawImage(x: Float, y: Float, w: Float, h: Float, texture: Int): Unit = {
@@ -57,12 +59,12 @@ object GLUtils {
       glRender(GL_QUADS) {
         glTexCoord2f(0.0f, 1.0f)
         glVertex2f(x, y)
-        glTexCoord2f(1.0f, 1.0f)
-        glVertex2f(x + w, y)
-        glTexCoord2f(1.0f, 0.0f)
-        glVertex2f(x + w, y + h)
         glTexCoord2f(0.0f, 0.0f)
         glVertex2f(x, y + h)
+        glTexCoord2f(1.0f, 0.0f)
+        glVertex2f(x + w, y + h)
+        glTexCoord2f(1.0f, 1.0f)
+        glVertex2f(x + w, y)
       }
       glDisable(GL_TEXTURE_2D)
       glBindTexture(GL_TEXTURE_2D, 0)
@@ -79,12 +81,12 @@ object GLUtils {
       glRender(GL_QUADS) {
         glTexCoord2f(0.0f, 0.0f)
         glVertex2f(x, y)
-        glTexCoord2f(1.0f, 0.0f)
-        glVertex2f(x + texture.getTextureWidth, y)
-        glTexCoord2f(1.0f, 1.0f)
-        glVertex2f(x + texture.getTextureWidth, y + texture.getTextureHeight)
         glTexCoord2f(0.0f, 1.0f)
         glVertex2f(x, y + texture.getTextureHeight)
+        glTexCoord2f(1.0f, 1.0f)
+        glVertex2f(x + texture.getTextureWidth, y + texture.getTextureHeight)
+        glTexCoord2f(1.0f, 0.0f)
+        glVertex2f(x + texture.getTextureWidth, y)
       }
       glDisable(GL_TEXTURE_2D)
       glBindTexture(GL_TEXTURE_2D, 0)

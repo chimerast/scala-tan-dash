@@ -21,9 +21,9 @@ object ShaderProgram {
   }
 
   def reload(): Unit = {
-    programs = programs.map { e =>
-      e._2.release
-      (e._1 -> new ShaderProgram(e._2.path))
+    programs = programs.map { case (name, program) =>
+      program.release
+      (name -> new ShaderProgram(program.path))
     }
   }
 
