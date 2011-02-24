@@ -94,4 +94,8 @@ class ShaderProgram(val path: Array[String]) {
   def uniform(name: String)(func: (Int) => Unit): Unit = {
     uniforms.get(name).foreach(func(_))
   }
+
+  def attribute(name: String)(func: (Int) => Unit): Unit = {
+    uniforms.get(name).foreach(func(_))
+  }
 }

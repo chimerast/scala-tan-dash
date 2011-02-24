@@ -114,6 +114,14 @@ object GLUtils {
     list
   }
 
+  def glLoadBufferObject(target: Int, buffer: ByteBuffer): Int = {
+    val id = glGenBuffers
+    glBindBuffer(target, id)
+    glBufferData(target, buffer, GL_DYNAMIC_DRAW)
+    glBindBuffer(target, 0)
+    id
+  }
+
   def glLoadBufferObject(target: Int, buffer: ShortBuffer): Int = {
     val id = glGenBuffers
     glBindBuffer(target, id)

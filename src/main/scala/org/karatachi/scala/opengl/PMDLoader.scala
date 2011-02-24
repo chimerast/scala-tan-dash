@@ -55,43 +55,46 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
   // テクスチャ
   val textures = materials.map { m =>
+    val texture = Array[Option[Texture]](None, None)
     val filenames = m.textureFileName.split("\\*|/").map(_.replace('\\', '/'))
-    filenames.map { f =>
+    filenames.foreach { f =>
       val file = new File(basedir, f)
       if (file.isFile) {
         val extension = file.getName.split("\\.").last.toUpperCase
         extension match {
           case "SPH" =>
-            Some(TextureLoader.getTexture("BMP", new FileInputStream(file)))
+            texture(1) = Some(TextureLoader.getTexture("BMP", new FileInputStream(file)))
           case "SPA" =>
-            Some(TextureLoader.getTexture("BMP", new FileInputStream(file)))
+            texture(1) = Some(TextureLoader.getTexture("BMP", new FileInputStream(file)))
           case ext =>
-            Some(TextureLoader.getTexture(ext, new FileInputStream(file)))
+            texture(0) =Some(TextureLoader.getTexture(ext, new FileInputStream(file)))
         }
-      } else {
-        None
       }
     }
+    texture
   }
 
   materials.foreach { m => println(m.textureFileName) }
-  skins.indices.foreach { i => println(i + ":" + skins(i).skinName + ":" + skins(i).skinType) }
+  // skins.indices.foreach { i => println(i + ":" + skins(i).skinName + ":" + skins(i).skinType) }
 
-  val VERTEX_ELEMENTS = 8
+  val VERTEX_ELEMENTS = 11
   val VERTEX_BUFFER_STRIDE = VERTEX_ELEMENTS * 4;
 
   /** 頂点リストの元配列 */
   private val vertexBufferRaw = {
-    val buffer = BufferUtils.createFloatBuffer(vertices.length * VERTEX_ELEMENTS)
+    val buffer = BufferUtils.createByteBuffer(vertices.length * VERTEX_BUFFER_STRIDE)
     vertices.foreach { v =>
-      buffer.put(v.pos.x)
-      buffer.put(v.pos.y)
-      buffer.put(v.pos.z)
-      buffer.put(v.normal.x)
-      buffer.put(v.normal.y)
-      buffer.put(v.normal.z)
-      buffer.put(v.uv.u)
-      buffer.put(v.uv.v)
+      buffer.putFloat(v.pos.x)
+      buffer.putFloat(v.pos.y)
+      buffer.putFloat(v.pos.z)
+      buffer.putFloat(v.normal.x)
+      buffer.putFloat(v.normal.y)
+      buffer.putFloat(v.normal.z)
+      buffer.putFloat(v.uv.u)
+      buffer.putFloat(v.uv.v)
+      buffer.putFloat(v.boneNum(0))
+      buffer.putFloat(v.boneNum(1))
+      buffer.putFloat(v.boneWight / 100.0f)
     }
     buffer.flip
     buffer
@@ -118,20 +121,21 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     // baseスキンの読み込み
     skins(0).skinVertData.foreach { v =>
       val index = v.skinVertIndex * VERTEX_ELEMENTS
-      vertexBufferRaw.put(index + 0, v.skinVertPos.x)
-      vertexBufferRaw.put(index + 1, v.skinVertPos.y)
-      vertexBufferRaw.put(index + 2, v.skinVertPos.z)
+      vertexBufferRaw.putFloat((index + 0) * 4, v.skinVertPos.x)
+      vertexBufferRaw.putFloat((index + 1) * 4, v.skinVertPos.y)
+      vertexBufferRaw.putFloat((index + 2) * 4, v.skinVertPos.z)
     }
+
     // スキンの差分を適用
     activeSkins.foreach { i =>
       skins(i).skinVertData.foreach { v =>
         val index = skins(0).skinVertData(v.skinVertIndex).skinVertIndex * VERTEX_ELEMENTS
-        vertexBufferRaw.put(index + 0,
-                            vertexBufferRaw.get(index + 0) + v.skinVertPos.x * skinEffect)
-        vertexBufferRaw.put(index + 1,
-                            vertexBufferRaw.get(index + 1) + v.skinVertPos.y * skinEffect)
-        vertexBufferRaw.put(index + 2,
-                            vertexBufferRaw.get(index + 2) + v.skinVertPos.z * skinEffect)
+        vertexBufferRaw.putFloat((index + 0) * 4,
+          vertexBufferRaw.getFloat((index + 0) * 4) + v.skinVertPos.x * skinEffect)
+        vertexBufferRaw.putFloat((index + 1) * 4,
+          vertexBufferRaw.getFloat((index + 1) * 4) + v.skinVertPos.y * skinEffect)
+        vertexBufferRaw.putFloat((index + 2) * 4,
+          vertexBufferRaw.getFloat((index + 2) * 4) + v.skinVertPos.z * skinEffect)
       }
     }
 
@@ -149,6 +153,11 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     glNormalPointer(GL_FLOAT, VERTEX_BUFFER_STRIDE, 3 * 4)
     glTexCoordPointer(2, GL_FLOAT, VERTEX_BUFFER_STRIDE, 6 * 4)
 
+    ShaderProgram.active.foreach(_.uniform("boneindices")(
+      glVertexAttribPointer(_, 2, GL_FLOAT, false, VERTEX_BUFFER_STRIDE, 8 * 4)))
+    ShaderProgram.active.foreach(_.uniform("boneweight")(
+      glVertexAttribPointer(_, 1, GL_FLOAT, false, VERTEX_BUFFER_STRIDE, 10 * 4)))
+
     ShaderProgram.active.foreach(_.uniform("texture0")(glUniform1i(_, 0)))
     ShaderProgram.active.foreach(_.uniform("texture1")(glUniform1i(_, 1)))
 
@@ -157,33 +166,26 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     materials.indices.foreach { i =>
       val m = materials(i)
       m.material.bind
+      glActiveTexture(GL_TEXTURE0)
       textures(i)(0) match {
         case Some(texture) =>
-          glEnable(GL_TEXTURE_2D)
           ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, GL_TRUE)))
-          glActiveTexture(GL_TEXTURE0)
           texture.bind
         case None =>
-          glDisable(GL_TEXTURE_2D)
           ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, GL_FALSE)))
-          glActiveTexture(GL_TEXTURE0)
           glBindTexture(GL_TEXTURE_2D, 0)
       }
-      if (textures(i).length > 1) {
-        textures(i)(1) match {
-          case Some(texture) =>
-            if (m.textureFileName.endsWith(".sph")) {
-              ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 1)))
-            } else {
-              ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 2)))
-            }
-          glActiveTexture(GL_TEXTURE1)
+      glActiveTexture(GL_TEXTURE1)
+      textures(i)(1) match {
+        case Some(texture) =>
+          if (m.textureFileName.endsWith(".sph"))
+            ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 1)))
+          else
+            ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 2)))
           texture.bind
-          case None =>
-            ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 0)))
-        }
-      } else {
-        ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 0)))
+        case None =>
+          ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 0)))
+          glBindTexture(GL_TEXTURE_2D, 0)
       }
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer)
       glDrawRangeElements(GL_TRIANGLES, 0, vertices.length - 1, m.faceVertCount,
@@ -198,7 +200,6 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
     glBindBuffer(GL_ARRAY_BUFFER, 0)
 
-    glDisable(GL_TEXTURE_2D)
     ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, GL_FALSE)))
     ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 0)))
     glActiveTexture(GL_TEXTURE1)
@@ -323,11 +324,11 @@ class XMaterial(buffer: ByteBuffer) {
 
   def bind = {
     values.position(0)
-    glMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE, values)
+    glMaterial(GL_FRONT, GL_DIFFUSE, values)
     glMaterialf(GL_FRONT, GL_SHININESS, power)
     values.position(4)
-    glMaterial(GL_FRONT_AND_BACK, GL_SPECULAR, values)
+    glMaterial(GL_FRONT, GL_SPECULAR, values)
     values.position(8)
-    glMaterial(GL_FRONT_AND_BACK, GL_AMBIENT, values)
+    glMaterial(GL_FRONT, GL_AMBIENT, values)
   }
 }

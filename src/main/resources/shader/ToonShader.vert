@@ -1,3 +1,6 @@
+attribute vec2 boneindex;
+attribute float boneweight;
+
 varying vec3 normal;
 
 void main() {
