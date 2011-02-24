@@ -10,10 +10,11 @@ void main() {
     vec3 Ldir = normalize(vec3(gl_LightSource[0].position));
 
     float intensity = dot(N, Ldir);
-    if (intensity > 0.05)
+    if (intensity > 0.05) {
         gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0) * gl_FrontMaterial.diffuse;
-    else
+    } else {
         gl_FragColor = vec4(0.9, 0.9, 0.9, 1.0) * gl_FrontMaterial.diffuse;
+    }
 
     gl_FragColor.rgb += gl_FrontMaterial.ambient.rgb * gl_LightSource[0].ambient.rgb;
 

@@ -74,8 +74,9 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     texture
   }
 
-  materials.foreach { m => println(m.textureFileName) }
-  // skins.indices.foreach { i => println(i + ":" + skins(i).skinName + ":" + skins(i).skinType) }
+  // ボーンのインデックスの設定および親子関係の構築
+  bones.indices.foreach { i => bones(i).index = i }
+  bones.filter(_.parentBoneIndex != -1).foreach { b => bones(b.parentBoneIndex).children ::= b }
 
   val VERTEX_ELEMENTS = 11
   val VERTEX_BUFFER_STRIDE = VERTEX_ELEMENTS * 4;
@@ -111,12 +112,29 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     buffer.flip
     glLoadBufferObject(GL_ELEMENT_ARRAY_BUFFER, buffer)
   }
+  /** スキニング用変換行列リスト */
+  val matrixBuffer = BufferUtils.createFloatBuffer(16 * 256)
 
   var activeSkins = List(1)
   var skinEffect = 0.0f
 
-  def render = {
+  def loadMatrix(bone: PMDBone): Unit = {
+    glPushMatrix
+    matrixBuffer.position(bone.index * 16)
+    glGetFloat(GL_MODELVIEW_MATRIX, matrixBuffer)
+    bone.children.foreach(loadMatrix)
+    glPopMatrix
+  }
+
+  def render(): Unit = {
     glEnable(GL_DEPTH_TEST)
+
+    matrixBuffer.clear()
+    loadMatrix(bones(0))
+    matrixBuffer.position(0)
+    matrixBuffer.limit(matrixBuffer.capacity)
+    ShaderProgram.active.foreach(_.uniform("modelViewMatrix[0]")(
+      glUniformMatrix4(_, false,  matrixBuffer)))
 
     // baseスキンの読み込み
     skins(0).skinVertData.foreach { v =>
@@ -143,19 +161,23 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer)
     glBufferData(GL_ARRAY_BUFFER, vertexBufferRaw, GL_DYNAMIC_DRAW)
 
+    // index bufferのバインド
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer)
+
     // 頂点データをvertex bufferを使用するように設定
     glEnableClientState(GL_VERTEX_ARRAY)
     glEnableClientState(GL_NORMAL_ARRAY)
     glEnableClientState(GL_TEXTURE_COORD_ARRAY)
+    ShaderProgram.active.foreach(_.attribute("boneIndex")(glEnableVertexAttribArray(_)))
+    ShaderProgram.active.foreach(_.attribute("boneWeight")(glEnableVertexAttribArray(_)))
 
     // vertex buffer中のデータの位置を指定
     glVertexPointer(3, GL_FLOAT, VERTEX_BUFFER_STRIDE, 0)
     glNormalPointer(GL_FLOAT, VERTEX_BUFFER_STRIDE, 3 * 4)
     glTexCoordPointer(2, GL_FLOAT, VERTEX_BUFFER_STRIDE, 6 * 4)
-
-    ShaderProgram.active.foreach(_.uniform("boneindices")(
+    ShaderProgram.active.foreach(_.attribute("boneIndex")(
       glVertexAttribPointer(_, 2, GL_FLOAT, false, VERTEX_BUFFER_STRIDE, 8 * 4)))
-    ShaderProgram.active.foreach(_.uniform("boneweight")(
+    ShaderProgram.active.foreach(_.attribute("boneWeight")(
       glVertexAttribPointer(_, 1, GL_FLOAT, false, VERTEX_BUFFER_STRIDE, 10 * 4)))
 
     ShaderProgram.active.foreach(_.uniform("texture0")(glUniform1i(_, 0)))
@@ -166,6 +188,8 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     materials.indices.foreach { i =>
       val m = materials(i)
       m.material.bind
+
+      // テクスチャの設定
       glActiveTexture(GL_TEXTURE0)
       textures(i)(0) match {
         case Some(texture) =>
@@ -175,6 +199,8 @@ class PMDModel(file: File, buffer: ByteBuffer) {
           ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, GL_FALSE)))
           glBindTexture(GL_TEXTURE_2D, 0)
       }
+
+      // 環境マッピングの設定
       glActiveTexture(GL_TEXTURE1)
       textures(i)(1) match {
         case Some(texture) =>
@@ -187,9 +213,11 @@ class PMDModel(file: File, buffer: ByteBuffer) {
           ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 0)))
           glBindTexture(GL_TEXTURE_2D, 0)
       }
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer)
+
+      // 描画
       glDrawRangeElements(GL_TRIANGLES, 0, vertices.length - 1, m.faceVertCount,
         GL_UNSIGNED_SHORT, index << 1)
+
       index += m.faceVertCount
     }
 
@@ -197,15 +225,19 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     glDisableClientState(GL_VERTEX_ARRAY)
     glDisableClientState(GL_NORMAL_ARRAY)
     glDisableClientState(GL_TEXTURE_COORD_ARRAY)
+    ShaderProgram.active.foreach(_.attribute("boneIndex")(glDisableVertexAttribArray(_)))
+    ShaderProgram.active.foreach(_.attribute("boneWeight")(glDisableVertexAttribArray(_)))
 
     glBindBuffer(GL_ARRAY_BUFFER, 0)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
 
-    ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, GL_FALSE)))
-    ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 0)))
     glActiveTexture(GL_TEXTURE1)
     glBindTexture(GL_TEXTURE_2D, 0)
     glActiveTexture(GL_TEXTURE0)
     glBindTexture(GL_TEXTURE_2D, 0)
+
+    ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, GL_FALSE)))
+    ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 0)))
   }
 }
 
@@ -255,6 +287,9 @@ class PMDBone(buffer: ByteBuffer) {
   val boneType = buffer.get
   val dummy = buffer.getShort
   val boneHeadPos = new XVector(buffer)
+
+  var index = -1
+  var children = List[PMDBone]()
 }
 
 class PMDIKData(buffer: ByteBuffer) {

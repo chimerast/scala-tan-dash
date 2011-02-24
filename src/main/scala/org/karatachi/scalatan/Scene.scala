@@ -76,34 +76,33 @@ class OpeningScene extends Scene {
   }
 
   def draw = {
-
     glMatrix {
       glTranslatef(0.0f, 0.0f, 0.0f)
       glScalef(0.10f, 0.10f, 0.10f)
-      //glRotatef(time*60, 0.0f, 1.0f, 0.0f)
+      glRotatef(time*60, 0.0f, 1.0f, 0.0f)
       miku.activeSkins = List(8, 13)
-      miku.skinEffect = math.abs(math.sin(time*3).toFloat)
+      miku.skinEffect = math.abs(math.sin(time).toFloat)
       miku.render
     }
-
+/*
     glMatrix {
       glTranslatef(1.0f, 0.0f, 0.0f)
       glScalef(0.10f, 0.10f, 0.10f)
       //glRotatef(time*60, 0.0f, 1.0f, 0.0f)
       yukari.activeSkins = List(5, 16)
-      yukari.skinEffect = math.abs(math.sin(time*3).toFloat)
+      yukari.skinEffect = math.abs(math.sin(time).toFloat)
       yukari.render
     }
 
     glMatrix {
       glTranslatef(-1.0f, 0.0f, 0.0f)
       glScalef(0.10f, 0.10f, 0.10f)
-      //glRotatef(time*60, 0.0f, 1.0f, 0.0f)
+      glRotatef(time*60, 0.0f, 1.0f, 0.0f)
       ran.activeSkins = List(5, 16)
-      ran.skinEffect = math.abs(math.sin(time*3).toFloat)
+      ran.skinEffect = math.abs(math.sin(time).toFloat)
       ran.render
     }
-
+*/
     glMatrix {
       glRender(GL_QUADS) {
         glColor3f(0.3f, 0.3f, 0.7f)
@@ -132,7 +131,7 @@ class OpeningScene extends Scene {
     ShaderProgram.unbind
 
     ShaderProgram.bind("Composition")
-    //glDrawImage(0, 0, 800, 600, FrameBuffer.texture("NormalAndDepth"))
+    glDrawImage(0, 0, 800, 600, FrameBuffer.texture("NormalAndDepth"))
     ShaderProgram.unbind
 
     glDrawImage(0, 0, texture)
