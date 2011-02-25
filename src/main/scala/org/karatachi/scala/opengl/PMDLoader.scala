@@ -113,13 +113,14 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     glLoadBufferObject(GL_ELEMENT_ARRAY_BUFFER, buffer)
   }
   /** スキニング用変換行列リスト */
-  val matrixBuffer = BufferUtils.createFloatBuffer(16 * 256)
+  val matrixBuffer = BufferUtils.createFloatBuffer(16 * 200)
 
   var activeSkins = List(1)
   var skinEffect = 0.0f
 
   def loadMatrix(bone: PMDBone): Unit = {
     glPushMatrix
+    glRotatef(20, 0.0f, 1.0f, 0.0f)
     matrixBuffer.position(bone.index * 16)
     glGetFloat(GL_MODELVIEW_MATRIX, matrixBuffer)
     bone.children.foreach(loadMatrix)

@@ -29,8 +29,10 @@ object ShaderProgram {
 
   def bind(name: String): Unit = {
     programs.get(name).foreach { p =>
-      glUseProgram(p.program)
-      active = Some(p)
+      if (!p.hasError) {
+        glUseProgram(p.program)
+        active = Some(p)
+      }
     }
   }
 
@@ -42,22 +44,27 @@ object ShaderProgram {
 
 class ShaderProgram(val path: Array[String]) {
   private val program = glCreateProgram
+  private var hasError = false
 
   path.foreach(attach)
   glLinkProgram(program)
   glValidateProgram(program)
-  glPrintProgramLog(program)
-  program
+  hasError = glPrintProgramLog(program)
 
   private val uniforms = {
     val maxLength = glGetProgram(program, GL_ACTIVE_UNIFORM_MAX_LENGTH)
-    (0 until glGetProgram(program, GL_ACTIVE_UNIFORMS))
-      .map(i => (glGetActiveUniform(program, i, maxLength), i)).toMap
+    (0 until glGetProgram(program, GL_ACTIVE_UNIFORMS)).map { i =>
+      val name =  glGetActiveUniform(program, i, maxLength)
+      (name, glGetUniformLocation(program, name))
+    }.toMap
   }
+
   private val attributes = {
     val maxLength = glGetProgram(program, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH)
-    (0 until glGetProgram(program, GL_ACTIVE_ATTRIBUTES))
-      .map(i => (glGetActiveAttrib(program, i, maxLength), i)).toMap
+    (0 until glGetProgram(program, GL_ACTIVE_ATTRIBUTES)).map { i =>
+      val name = glGetActiveAttrib(program, i, maxLength)
+      (name, glGetAttribLocation(program, name))
+    }.toMap
   }
 
   def attach(path: String): Unit = {

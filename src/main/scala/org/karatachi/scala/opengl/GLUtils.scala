@@ -154,19 +154,25 @@ object GLUtils {
     id
   }
 
-  def glPrintShaderLog(id: Int): Unit = {
+  def glPrintShaderLog(id: Int): Boolean = {
     val size = glGetShader(id, GL_INFO_LOG_LENGTH);
     if (size > 0) {
       println("Info log:")
       println(glGetShaderInfoLog(id, size))
+      true
+    } else {
+      false
     }
   }
 
-  def glPrintProgramLog(id: Int): Unit = {
+  def glPrintProgramLog(id: Int): Boolean = {
     val size = glGetProgram(id, GL_INFO_LOG_LENGTH);
     if (size > 0) {
       println("Info log:")
       println(glGetProgramInfoLog(id, size))
+      true
+    } else {
+      false
     }
   }
 
