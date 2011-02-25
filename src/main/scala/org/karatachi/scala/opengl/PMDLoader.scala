@@ -95,7 +95,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       buffer.putFloat(v.uv.v)
       buffer.putFloat(v.boneNum(0))
       buffer.putFloat(v.boneNum(1))
-      buffer.putFloat(v.boneWight / 100.0f)
+      buffer.putFloat(1.0f - (v.boneWight / 100.0f))
     }
     buffer.flip
     buffer
