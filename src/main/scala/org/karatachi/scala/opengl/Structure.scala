@@ -8,35 +8,29 @@ import org.lwjgl._
 import org.lwjgl.opengl._
 import org.lwjgl.opengl.GL11._
 
-class Vector(buffer: ByteBuffer) {
-  val x = buffer.getFloat
-  val y = buffer.getFloat
-  val z = -buffer.getFloat
+case class Vector(x: Float, y: Float, z: Float) {
+  def this(buffer: ByteBuffer) =
+    this(buffer.getFloat, buffer.getFloat, -buffer.getFloat)
 }
 
-class Quarternion(buffer: ByteBuffer) {
-  val x = buffer.getFloat
-  val y = buffer.getFloat
-  val z = buffer.getFloat
-  val w = buffer.getFloat
+case class Quaternion(x: Float, y: Float, z: Float, w: Float) {
+  def this(buffer: ByteBuffer) =
+    this(buffer.getFloat, buffer.getFloat, buffer.getFloat, buffer.getFloat)
 }
 
-class Coords2d(buffer: ByteBuffer) {
-  val u = buffer.getFloat
-  val v = buffer.getFloat
+case class Coords2d(u: Float, v: Float) {
+  def this(buffer: ByteBuffer) =
+    this(buffer.getFloat, buffer.getFloat)
 }
 
-class ColorRGBA(buffer: ByteBuffer) {
-  val r = buffer.getFloat
-  val g = buffer.getFloat
-  val b = buffer.getFloat
-  val a = buffer.getFloat
+case class ColorRGBA(r: Float, g: Float, b: Float, a: Float) {
+  def this(buffer: ByteBuffer) =
+    this(buffer.getFloat, buffer.getFloat, buffer.getFloat, buffer.getFloat)
 }
 
-class ColorRGB(buffer: ByteBuffer) {
-  val r = buffer.getFloat
-  val g = buffer.getFloat
-  val b = buffer.getFloat
+case class ColorRGB(r: Float, g: Float, b: Float) {
+  def this(buffer: ByteBuffer) =
+    this(buffer.getFloat, buffer.getFloat, buffer.getFloat)
 }
 
 class Material(buffer: ByteBuffer) {
