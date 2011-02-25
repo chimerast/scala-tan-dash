@@ -6,6 +6,7 @@ import org.lwjgl.opengl.GL11._
 import org.lwjgl.opengl.GL20._
 import org.lwjgl.util.glu.Project._
 import org.lwjgl.input._
+
 import org.karatachi.scala.opengl._
 import org.karatachi.scala.opengl.GLUtils._
 

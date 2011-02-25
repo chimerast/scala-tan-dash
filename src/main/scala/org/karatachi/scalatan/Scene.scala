@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL20._
 import org.lwjgl.util.glu.Project._
 import org.newdawn.slick._
 import org.newdawn.slick.opengl._
+
 import org.karatachi.scala.opengl._
 import org.karatachi.scala.opengl.GLUtils._
 
@@ -63,7 +64,8 @@ class OpeningScene extends Scene {
     //ran = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
     //miku = PMDLoader.load("resources/Lat式ミクVer2.3/Lat式ミクVer2.3_Normal.pmd")
     //miku = PMDLoader.load("resources/Model/初音ミク.pmd")
-    miku = PMDLoader.load("resources/Model/初音ミクmetal.pmd")
+    miku = PMDLoader.load("resources/らぶ式ミク/らぶ式ミク.pmd")
+    //miku = PMDLoader.load("resources/Model/初音ミクmetal.pmd")
 
     texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
 
@@ -103,15 +105,6 @@ class OpeningScene extends Scene {
       ran.render
     }
 */
-    glMatrix {
-      glRender(GL_QUADS) {
-        glColor3f(0.3f, 0.3f, 0.7f)
-        glVertex3f(4.0f, 0.0f, -4.0f)
-        glVertex3f(-4.0f, 0.0f, -4.0f)
-        glVertex3f(-4.0f, 0.0f, 4.0f)
-        glVertex3f(4.0f, 0.0f, 4.0f)
-      }
-    }
   }
 
   override def update = {
@@ -129,6 +122,17 @@ class OpeningScene extends Scene {
     ShaderProgram.bind("ToonShader")
     draw
     ShaderProgram.unbind
+
+
+    glMatrix {
+      glRender(GL_QUADS) {
+        glColor3f(0.3f, 0.3f, 0.7f)
+        glVertex3f(4.0f, 0.0f, -4.0f)
+        glVertex3f(-4.0f, 0.0f, -4.0f)
+        glVertex3f(-4.0f, 0.0f, 4.0f)
+        glVertex3f(4.0f, 0.0f, 4.0f)
+      }
+    }
 
     ShaderProgram.bind("Composition")
     glDrawImage(0, 0, 800, 600, FrameBuffer.texture("NormalAndDepth"))

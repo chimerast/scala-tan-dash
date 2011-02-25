@@ -12,6 +12,7 @@ import org.lwjgl.opengl.GL13._
 import org.lwjgl.opengl.GL15._
 import org.lwjgl.opengl.GL20._
 import org.newdawn.slick.opengl._
+
 import org.karatachi.scala.IOUtils._
 import org.karatachi.scala.opengl.GLUtils._
 import org.karatachi.scala.opengl.ShaderProgram._
@@ -27,9 +28,6 @@ object PMDLoader {
       new PMDModel(file, buffer)
     }
   }
-}
-
-class PMDFormatException extends Exception {
 }
 
 class PMDModel(file: File, buffer: ByteBuffer) {
@@ -120,7 +118,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
   def loadMatrix(bone: PMDBone): Unit = {
     glPushMatrix
-    glRotatef(20, 0.0f, 1.0f, 0.0f)
+    glRotatef(10, 0.0f, 1.0f, 0.0f)
     matrixBuffer.position(bone.index * 16)
     glGetFloat(GL_MODELVIEW_MATRIX, matrixBuffer)
     bone.children.foreach(loadMatrix)
@@ -265,16 +263,16 @@ class PMDHeaderEg(buffer: ByteBuffer, model: PMDModel) {
 }
 
 class PMDVertex(buffer: ByteBuffer) {
-  val pos = new XVector(buffer)
-  val normal = new XVector(buffer)
-  val uv = new XCoords2d(buffer)
+  val pos = new Vector(buffer)
+  val normal = new Vector(buffer)
+  val uv = new Coords2d(buffer)
   val boneNum = Array(buffer.getShort, buffer.getShort)
   val boneWight = buffer.get
   val edgeFlag = buffer.get
 }
 
 class PMDMaterial(buffer: ByteBuffer) {
-  val material = new XMaterial(buffer)
+  val material = new Material(buffer)
   val toonIndex = buffer.get
   val edgeFlag = buffer.get
   val faceVertCount = buffer.getInt
@@ -287,7 +285,7 @@ class PMDBone(buffer: ByteBuffer) {
   val tailPosBoneIndex = buffer.getShort
   val boneType = buffer.get
   val dummy = buffer.getShort
-  val boneHeadPos = new XVector(buffer)
+  val boneHeadPos = new Vector(buffer)
 
   var index = -1
   var children = List[PMDBone]()
@@ -304,7 +302,7 @@ class PMDIKData(buffer: ByteBuffer) {
 
 class PMDSkinVertData(buffer: ByteBuffer) {
   val skinVertIndex = buffer.getInt
-  val skinVertPos = new XVector(buffer)
+  val skinVertPos = new Vector(buffer)
 }
 
 class PMDSkinData(buffer: ByteBuffer) {
@@ -319,52 +317,5 @@ class PMDBoneDisp(buffer: ByteBuffer) {
   val boneDispFrameIndex = buffer.get
 }
 
-class XVector(buffer: ByteBuffer) {
-  val x = buffer.getFloat
-  val y = buffer.getFloat
-  val z = -buffer.getFloat
-}
-
-class XCoords2d(buffer: ByteBuffer) {
-  val u = buffer.getFloat
-  val v = buffer.getFloat
-}
-
-class XColorRGBA(buffer: ByteBuffer) {
-  val r = buffer.getFloat
-  val g = buffer.getFloat
-  val b = buffer.getFloat
-  val a = buffer.getFloat
-}
-
-class XColorRGB(buffer: ByteBuffer) {
-  val r = buffer.getFloat
-  val g = buffer.getFloat
-  val b = buffer.getFloat
-}
-
-class XMaterial(buffer: ByteBuffer) {
-  val diffuse = new XColorRGBA(buffer)
-  val power = buffer.getFloat
-  val specular = new XColorRGB(buffer)
-  val ambient = new XColorRGB(buffer)
-
-  private val values = {
-    val values = BufferUtils.createFloatBuffer(12)
-    values.put(diffuse.r).put(diffuse.g).put(diffuse.b).put(diffuse.a)
-    values.put(specular.r).put(specular.g).put(specular.b).put(1.0f)
-    values.put(ambient.r).put(ambient.g).put(ambient.b).put(1.0f)
-    values.flip
-    values
-  }
-
-  def bind = {
-    values.position(0)
-    glMaterial(GL_FRONT, GL_DIFFUSE, values)
-    glMaterialf(GL_FRONT, GL_SHININESS, power)
-    values.position(4)
-    glMaterial(GL_FRONT, GL_SPECULAR, values)
-    values.position(8)
-    glMaterial(GL_FRONT, GL_AMBIENT, values)
-  }
+class PMDFormatException extends Exception {
 }
