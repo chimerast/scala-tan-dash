@@ -17,7 +17,7 @@ case class Vector(x: Float, y: Float, z: Float) {
   def *(rhs: Float) = Vector(x*rhs, y*rhs, z*rhs)
   def unary_- = Vector(-x, -y, -z)
   def dot(rhs: Vector) = x*rhs.x + y*rhs.y + z*rhs.z
-  def interporate(rhs: Vector, t: Float) = this*(1.0f-t) + rhs*t
+  def interpolate(rhs: Vector, t: Float) = this*(1.0f-t) + rhs*t
 }
 
 case class Quaternion(x: Float, y: Float, z: Float, w: Float) {
@@ -45,11 +45,11 @@ case class Quaternion(x: Float, y: Float, z: Float, w: Float) {
     lhs * leftScale.toFloat + rhs * rightScale.toFloat
   }
   def setupMatrix(buffer: FloatBuffer): Unit = {
-    val xx = x*x; val xy = x*y; val xz = x*z; val xw = x*w;
-    val yy = y*y; val yz = y*z; val yw = y*w; val zz = z*z; val zw = z*w;
-    buffer.put(1-2*(yy+zz)).put(2*(xy-zw)).put(2*(xz+yw)).put(0)
-    buffer.put(2*(xy+zw)).put(1-2*(xx+zz)).put(2*(yz-xw)).put(0)
-    buffer.put(2*(xz-yw)).put(2*(yz+xw)).put(1-2*(xx+yy)).put(0)
+    val xx = 2*x*x; val xy = 2*x*y; val xz = 2*x*z; val xw = 2*x*w;
+    val yy = 2*y*y; val yz = 2*y*z; val yw = 2*y*w; val zz = 2*z*z; val zw = 2*z*w;
+    buffer.put(1-yy-zz).put(xy-zw).put(xz+yw).put(0)
+    buffer.put(xy+zw).put(1-xx-zz).put(yz-xw).put(0)
+    buffer.put(xz-yw).put(yz+xw).put(1-xx-yy).put(0)
     buffer.put(0).put(0).put(0).put(1)
   }
 }

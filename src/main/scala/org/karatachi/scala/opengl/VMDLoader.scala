@@ -64,7 +64,7 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
       val t = if (dist != 0.0f) (f - curr.frameNum) / dist else 0.0f
 
       // 補間
-      val pos = curr.pos.interporate(next.pos, t)
+      val pos = curr.pos.interpolate(next.pos, t)
       val quat = curr.quat.slerp(next.quat, t)
 
       // 回転行列の設定
