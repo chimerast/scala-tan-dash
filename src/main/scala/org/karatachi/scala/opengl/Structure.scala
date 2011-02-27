@@ -15,6 +15,7 @@ case class Vector(x: Float, y: Float, z: Float) {
   def -(rhs: Vector) = Vector(x-rhs.x, y-rhs.y, z-rhs.z)
   def *(rhs: Vector) = Vector(x*rhs.x, y*rhs.y, z*rhs.z)
   def *(rhs: Float) = Vector(x*rhs, y*rhs, z*rhs)
+  def unary_- = Vector(-x, -y, -z)
   def dot(rhs: Vector) = x*rhs.x + y*rhs.y + z*rhs.z
   def interporate(rhs: Vector, t: Float) = this*(1.0f-t) + rhs*t
 }

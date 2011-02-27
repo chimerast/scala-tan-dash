@@ -52,20 +52,21 @@ class LoadingScene(next: Scene) extends Scene {
 class OpeningScene extends Scene {
   override val layers: List[Layer] = List(new DebugLayer)
 
-  var yukari: Option[PMDModel] = null
-  var ran: Option[PMDModel] = null
-  var miku: Option[PMDModel] = null
+  var yukari = None.asInstanceOf[Option[PMDModel]]
+  var ran = None.asInstanceOf[Option[PMDModel]]
+  var miku = None.asInstanceOf[Option[PMDModel]]
   var texture: Texture = null
 
   override def init = {
     glClearColor(0.6f, 0.8f, 1.0f, 0.0f)
 
-    //yukari = PMDLoader.load("resources/kask_yukari/kask_yukari.pmd")
+    yukari = PMDLoader.load("resources/kask_yukari/kask_yukari.pmd")
+    yukari.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
     ran = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
-    ran.foreach(_.attachMotion(VMDLoader.load("resources/Motion/ごまえミク.vmd")))
-    //miku = PMDLoader.load("resources/Lat式ミクVer2.3/Lat式ミクVer2.3_Normal.pmd")
-    miku = PMDLoader.load("resources/Model/初音ミク.pmd")
-    miku.foreach(_.attachMotion(VMDLoader.load("resources/Motion/ごまえミク.vmd")))
+    ran.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
+    //miku = PMDLoader.load("resources/ika/ikaopmf1016.pmd")
+    //miku = PMDLoader.load("resources/Model/初音ミク.pmd")
+    //miku.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
     //miku = PMDLoader.load("resources/ika/ikaopmf1016.pmd")
     //miku = PMDLoader.load("resources/Model/初音ミクmetal.pmd")
 
@@ -80,31 +81,26 @@ class OpeningScene extends Scene {
   }
 
   def draw = {
-    miku.foreach { m=>
+    miku.foreach { m =>
       glMatrix {
         glScalef(0.10f, 0.10f, 0.10f)
         m.render(time * 24.0f)
       }
     }
-/*
-    glMatrix {
-      glTranslatef(1.0f, 0.0f, 0.0f)
-      glScalef(0.10f, 0.10f, 0.10f)
-      glRotatef(time*60, 0.0f, 1.0f, 0.0f)
-      yukari.activeSkins = List(5, 16)
-      yukari.skinEffect = math.abs(math.sin(time).toFloat)
-      yukari.render
+    yukari.foreach { m =>
+      glMatrix {
+        glTranslatef(0.7f, 0.0f, 0.0f)
+        glScalef(0.10f, 0.10f, 0.10f)
+        m.render(time * 24.0f)
+      }
     }
-
-    glMatrix {
-      glTranslatef(-1.0f, 0.0f, 0.0f)
-      glScalef(0.10f, 0.10f, 0.10f)
-      glRotatef(time*60, 0.0f, 1.0f, 0.0f)
-      ran.activeSkins = List(5, 16)
-      ran.skinEffect = math.abs(math.sin(time).toFloat)
-      ran.render
+    ran.foreach { m =>
+      glMatrix {
+        glTranslatef(-0.7f, 0.0f, 0.0f)
+        glScalef(0.10f, 0.10f, 0.10f)
+        m.render(time * 24.0f)
+      }
     }
-*/
   }
 
   override def update = {
@@ -122,7 +118,6 @@ class OpeningScene extends Scene {
     ShaderProgram.bind("ToonShader")
     draw
     ShaderProgram.unbind
-
 
     glMatrix {
       glRender(GL_QUADS) {

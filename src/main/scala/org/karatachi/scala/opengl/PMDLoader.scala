@@ -119,15 +119,14 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
   private var motion = None.asInstanceOf[Option[VMDModel]]
 
-  def attachMotion(vmd: Option[VMDModel]): Unit = motion = vmd
-
-  var activeSkins = List()
-  var skinEffect = 0.0f
+  def attachMotion(path: String): Unit = {
+    motion = VMDLoader.load(path, this)
+  }
 
   def loadMatrix(bone: PMDBone, frame: Float): Unit = {
     glPushMatrix
     matrixBuffer.position(bone.index * 16)
-    motion.foreach(_.apply(bone, matrixBuffer, frame))
+    motion.foreach(_.applyBone(bone, matrixBuffer, frame))
     matrixBuffer.position(bone.index * 16)
     glGetFloat(GL_MODELVIEW_MATRIX, matrixBuffer)
     bone.children.foreach(loadMatrix(_, frame))
@@ -153,17 +152,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     }
 
     // スキンの差分を適用
-    activeSkins.foreach { i =>
-      skins(i).skinVertData.foreach { v =>
-        val index = skins(0).skinVertData(v.skinVertIndex).skinVertIndex * VERTEX_ELEMENTS
-        vertexBufferRaw.putFloat((index + 0) * 4,
-          vertexBufferRaw.getFloat((index + 0) * 4) + v.skinVertPos.x * skinEffect)
-        vertexBufferRaw.putFloat((index + 1) * 4,
-          vertexBufferRaw.getFloat((index + 1) * 4) + v.skinVertPos.y * skinEffect)
-        vertexBufferRaw.putFloat((index + 2) * 4,
-          vertexBufferRaw.getFloat((index + 2) * 4) + v.skinVertPos.z * skinEffect)
-      }
-    }
+    (1 to 4).foreach(i => motion.foreach(_.applySkin(i, vertexBufferRaw, frame)))
 
     // vertex bufferのバインドとリロード
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer)
