@@ -31,17 +31,26 @@ object FrameBuffer {
   }
 
   def unbind(): Unit = {
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-    glPopAttrib()
-    active = None
+    active.foreach { b =>
+      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+      glPopAttrib()
+      active = None
+    }
   }
 
-  def texture(name: String): Int = {
+  def apply(name: String)(block: => Unit): Unit = {
+    bind(name)
+    if (active != None)
+      block
+    unbind
+  }
+
+  def texture(name: String): Option[Int] = {
     buffers.get(name) match {
       case Some(b) =>
-        b.texture
+        Some(b.texture)
       case None =>
-        throw new NoSuchElementException
+        None
     }
   }
 }

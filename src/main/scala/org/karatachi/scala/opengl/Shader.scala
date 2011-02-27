@@ -14,8 +14,8 @@ object ShaderProgram {
   var active: Option[ShaderProgram] = None
   var programs = Map[String, ShaderProgram]()
 
-  def load(name: String, path: Array[String]): ShaderProgram = {
-    val program = new ShaderProgram(path)
+  def load(name: String): ShaderProgram = {
+    val program = new ShaderProgram(Array(name + ".vert", name + ".frag"))
     programs += (name -> program)
     program
   }
@@ -39,6 +39,13 @@ object ShaderProgram {
   def unbind(): Unit = {
     glUseProgram(0)
     active = None
+  }
+
+  def apply(name: String)(block: => Unit): Unit = {
+    bind(name)
+    if (active != None)
+      block
+    unbind
   }
 }
 

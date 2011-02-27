@@ -18,8 +18,8 @@ void main() {
     normalAndDepth += texture2D(texture, shift(tex, vec2( 1.0, -1.0)));
     normalAndDepth += texture2D(texture, tex) * -8.0;
 
-    if (normalAndDepth.w >= 0.03 || length(normalAndDepth.xyz) >= 0.6) {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.5);
+    if (normalAndDepth.w >= 0.01 || length(normalAndDepth.xyz) >= 0.6) {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
     } else {
         discard;
     }

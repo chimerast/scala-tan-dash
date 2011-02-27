@@ -4,6 +4,7 @@ import org.lwjgl._
 import org.lwjgl.opengl._
 import org.lwjgl.opengl.GL11._
 import org.lwjgl.opengl.GL20._
+import org.lwjgl.input._
 import org.lwjgl.util.glu.Project._
 import org.newdawn.slick._
 import org.newdawn.slick.opengl._
@@ -57,39 +58,39 @@ class OpeningScene extends Scene {
   var miku = None.asInstanceOf[Option[PMDModel]]
   var texture: Texture = null
 
+  var depth = 5.0
+  var radian = 0.0
+
   override def init = {
     glClearColor(0.6f, 0.8f, 1.0f, 0.0f)
 
+    miku = PMDLoader.load("resources/Model/初音ミク.pmd")
+    miku.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
     yukari = PMDLoader.load("resources/kask_yukari/kask_yukari.pmd")
     yukari.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
     ran = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
     ran.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
     //miku = PMDLoader.load("resources/ika/ikaopmf1016.pmd")
-    miku = PMDLoader.load("resources/Model/初音ミクmetal.pmd")
-    miku.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
-    //miku = PMDLoader.load("resources/ika/ikaopmf1016.pmd")
-    //miku = PMDLoader.load("resources/Model/初音ミクmetal.pmd")
+    //miku = PMDLoader.load("resources/Lat式ミクVer2.3/Lat式ミクVer2.3_Normal.pmd")
 
     texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
 
-    FrameBuffer.create("NormalAndDepth")
+    //FrameBuffer.create("NormalAndDepth")
 
     ShaderProgram.rootpath = "src/main/resources/shader";
-    ShaderProgram.load("ToonShader", Array("ToonShader.vert", "ToonShader.frag"))
-    ShaderProgram.load("Edge", Array("Edge.vert", "Edge.frag"))
-    ShaderProgram.load("NormalAndDepth", Array("NormalAndDepth.vert", "NormalAndDepth.frag"))
-    ShaderProgram.load("Composition", Array("Composition.vert", "Composition.frag"))
+    ShaderProgram.load("ToonShader")
+    ShaderProgram.load("Edge")
+    //ShaderProgram.load("NormalAndDepth")
+    //ShaderProgram.load("Composition")
   }
 
   def draw = {
-/*
     miku.foreach { m =>
       glMatrix {
         glScalef(0.10f, 0.10f, 0.10f)
         m.render(time * 24.0f)
       }
     }
-*/
     yukari.foreach { m =>
       glMatrix {
         glTranslatef(0.7f, 0.0f, 0.0f)
@@ -107,20 +108,37 @@ class OpeningScene extends Scene {
   }
 
   override def update = {
+    if (Keyboard.isKeyDown(Keyboard.KEY_UP))
+      depth -= 2.0 * delta
+    if (Keyboard.isKeyDown(Keyboard.KEY_DOWN))
+      depth += 2.0 * delta
+    if (depth < 1.0)
+      depth = 1.0
+    if (depth > 10.0)
+      depth = 10.0
+
+    if (Keyboard.isKeyDown(Keyboard.KEY_LEFT))
+      radian -= 1.0 * delta
+    if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
+      radian += 1.0 * delta
+
+    val x = (depth * math.sin(radian)).toFloat
+    val z = (depth * math.cos(radian)).toFloat
+
+    glLoadIdentity
+    gluLookAt(x, 1.0f, z, 0.0f, 1.2f, 0.0f, 0.0f, 1.0f, 0.0f);
   }
 
   override def render = {
-    FrameBuffer.bind("NormalAndDepth")
-    ShaderProgram.bind("NormalAndDepth")
-    glDisable(GL_BLEND)
-    draw
-    glEnable(GL_BLEND)
-    ShaderProgram.unbind
-    FrameBuffer.unbind
+    ShaderProgram("Edge") { draw }
 
-    ShaderProgram.bind("ToonShader")
-    draw
-    ShaderProgram.unbind
+    FrameBuffer("NormalAndDepth") {
+      glDisable(GL_BLEND)
+      ShaderProgram("NormalAndDepth") { draw }
+      glEnable(GL_BLEND)
+    }
+
+    ShaderProgram("ToonShader") { draw }
 
     glMatrix {
       glRender(GL_QUADS) {
@@ -132,9 +150,9 @@ class OpeningScene extends Scene {
       }
     }
 
-    ShaderProgram.bind("Composition")
-    glDrawImage(0, 0, 800, 600, FrameBuffer.texture("NormalAndDepth"))
-    ShaderProgram.unbind
+    ShaderProgram("Composition") {
+      FrameBuffer.texture("NormalAndDepth").foreach(glDrawImage(0, 0, 800, 600, _))
+    }
 
     glDrawImage(0, 0, texture)
 

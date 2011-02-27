@@ -3,17 +3,19 @@ uniform sampler2D texture1;
 uniform bool texturing;
 uniform int sphere;
 
+varying vec4 position;
 varying vec3 normal;
 
 void main() {
+    vec3 V = normalize(-position.xyz);
     vec3 N = normalize(normal);
-    vec3 Ldir = normalize(vec3(gl_LightSource[0].position));
+    vec3 L = normalize(gl_LightSource[0].position.xyz - position.xyz);
 
-    float intensity = dot(N, Ldir);
-    if (intensity > 0.05) {
-        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0) * gl_FrontMaterial.diffuse;
+    float dotNL = dot(L, N);
+    if (dotNL > 0.35) {
+        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0) * gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;
     } else {
-        gl_FragColor = vec4(0.9, 0.9, 0.9, 1.0) * gl_FrontMaterial.diffuse;
+        gl_FragColor = vec4(0.9, 0.9, 0.9, 1.0) * gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;
     }
 
     gl_FragColor.rgb += gl_FrontMaterial.ambient.rgb * gl_LightSource[0].ambient.rgb;
@@ -34,9 +36,9 @@ void main() {
         }
     }
 
-    if (intensity > 0.0) {
+    if (dotNL > 0.0) {
         float NdotHV = max(dot(normal, gl_LightSource[0].halfVector.xyz), 0.0);
         gl_FragColor.rgb += gl_FrontMaterial.specular.rgb * gl_LightSource[0].specular.rgb
-            * pow(intensity, gl_FrontMaterial.shininess);
+            * pow(dotNL, gl_FrontMaterial.shininess);
     }
 }
