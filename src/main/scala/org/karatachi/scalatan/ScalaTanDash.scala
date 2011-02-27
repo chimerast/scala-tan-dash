@@ -38,7 +38,7 @@ object ScalaTanDash {
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity
-    gluLookAt(0.0f, 1.0f, 7.0f, 0.0f, 0.8f, 0.0f, 0.0f, 1.0f, 0.0f);
+    gluLookAt(0.0f, 1.0f, 5.0f, 0.0f, 1.2f, 0.0f, 0.0f, 1.0f, 0.0f);
 
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -53,8 +53,6 @@ object ScalaTanDash {
     glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse)
     glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
     glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
-
-    // glEnable(GL_CULL_FACE)
   }
 
   def run() {

@@ -25,7 +25,7 @@ void main() {
     }
 
     if (sphere != 0) {
-        vec2 st = normalize(N.xy) * 0.5 + 0.5;
+        vec2 st = N.xy * 0.5 + 0.5;
         vec4 px = texture2D(texture1, st);
         if (sphere == 1) {
             gl_FragColor.rgb *= px.rgb;

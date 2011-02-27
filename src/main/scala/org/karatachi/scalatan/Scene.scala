@@ -65,28 +65,31 @@ class OpeningScene extends Scene {
     ran = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
     ran.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
     //miku = PMDLoader.load("resources/ika/ikaopmf1016.pmd")
-    //miku = PMDLoader.load("resources/Model/初音ミク.pmd")
-    //miku.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
+    miku = PMDLoader.load("resources/Model/初音ミクmetal.pmd")
+    miku.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
     //miku = PMDLoader.load("resources/ika/ikaopmf1016.pmd")
     //miku = PMDLoader.load("resources/Model/初音ミクmetal.pmd")
 
     texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
 
-    FrameBuffer.create("NormalAndDepth", 800, 600)
+    FrameBuffer.create("NormalAndDepth")
 
     ShaderProgram.rootpath = "src/main/resources/shader";
     ShaderProgram.load("ToonShader", Array("ToonShader.vert", "ToonShader.frag"))
+    ShaderProgram.load("Edge", Array("Edge.vert", "Edge.frag"))
     ShaderProgram.load("NormalAndDepth", Array("NormalAndDepth.vert", "NormalAndDepth.frag"))
     ShaderProgram.load("Composition", Array("Composition.vert", "Composition.frag"))
   }
 
   def draw = {
+/*
     miku.foreach { m =>
       glMatrix {
         glScalef(0.10f, 0.10f, 0.10f)
         m.render(time * 24.0f)
       }
     }
+*/
     yukari.foreach { m =>
       glMatrix {
         glTranslatef(0.7f, 0.0f, 0.0f)

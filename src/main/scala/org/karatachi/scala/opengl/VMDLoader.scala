@@ -54,12 +54,13 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
     ret
   }
 
-  def applyBone(bone: PMDBone, buffer: FloatBuffer, frame: Float): Unit = {
-    var f = frame
-    while (f >= maxFrame) f -= maxFrame
+  /** ボーンにアニメーションを適用する */
+  def applyBone(bone: PMDBone, matrix: FloatBuffer, frame: Float): Unit = {
+    var f = frame; while (f >= maxFrame) f -= maxFrame
     bonemap.get(bone.boneName).map(_.takeWhile(_.frameNum <= f).last).foreach { curr =>
       val next = curr.next
 
+      // 変化値の計算
       val dist = { var ret = next.frameNum - curr.frameNum; if (ret < 0.0f) ret += maxFrame; ret }
       val t = if (dist != 0.0f) (f - curr.frameNum) / dist else 0.0f
 
@@ -68,39 +69,43 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
       val quat = curr.quat.slerp(next.quat, t)
 
       // 回転行列の設定
-      quat.setupMatrix(buffer)
-      buffer.position(buffer.position - 16)
+      quat.setupMatrix(matrix)
+      matrix.position(matrix.position - 16)
 
-      val head = bone.boneHeadPos
       // 変換
+      val head = bone.boneHeadPos
       glTranslatef(head.x+pos.x, head.y+pos.y, head.z+pos.z)
-      glMultMatrix(buffer)
+      glMultMatrix(matrix)
       glTranslatef(-head.x, -head.y, -head.z)
     }
   }
 
-  def applySkin(skintype: Int, buffer: ByteBuffer, frame: Float): Unit = {
-    var f = frame
-    while (f >= maxFrame) f -= maxFrame
+  /** スキンにアニメーションを適用する */
+  def applySkin(skintype: Int, vertex: ByteBuffer, frame: Float): Unit = {
+    var f = frame; while (f >= maxFrame) f -= maxFrame
     skinmap.get(skintype).map(_.takeWhile(_.frameNum <= f).last).foreach { curr =>
       val next = curr.next
 
+      // 変化値の計算
       val dist = { var ret = next.frameNum - curr.frameNum; if (ret < 0.0f) ret += maxFrame; ret }
       val t = if (dist != 0.0f) (f - curr.frameNum) / dist else 0.0f
 
+      // 補間しつつ適用
       val curreffect = curr.weight * (1.0f - t)
       model.skins(curr.index).skinVertData.foreach { v =>
-        val index = model.skins(0).skinVertData(v.skinVertIndex).skinVertIndex * model.VERTEX_ELEMENTS
-        buffer.putFloat((index + 0) * 4, buffer.getFloat((index + 0) * 4) + v.skinVertPos.x * curreffect)
-        buffer.putFloat((index + 1) * 4, buffer.getFloat((index + 1) * 4) + v.skinVertPos.y * curreffect)
-        buffer.putFloat((index + 2) * 4, buffer.getFloat((index + 2) * 4) + v.skinVertPos.z * curreffect)
+        val index = model.skins(0).skinVertData(v.skinVertIndex).skinVertIndex *
+                      model.VERTEX_BUFFER_STRIDE
+        vertex.putFloat(index+0, vertex.getFloat(index+0) + v.skinVertPos.x * curreffect)
+        vertex.putFloat(index+4, vertex.getFloat(index+4) + v.skinVertPos.y * curreffect)
+        vertex.putFloat(index+8, vertex.getFloat(index+8) + v.skinVertPos.z * curreffect)
       }
       val nexteffect = next.weight * t
       model.skins(next.index).skinVertData.foreach { v =>
-        val index = model.skins(0).skinVertData(v.skinVertIndex).skinVertIndex * model.VERTEX_ELEMENTS
-        buffer.putFloat((index + 0) * 4, buffer.getFloat((index + 0) * 4) + v.skinVertPos.x * nexteffect)
-        buffer.putFloat((index + 1) * 4, buffer.getFloat((index + 1) * 4) + v.skinVertPos.y * nexteffect)
-        buffer.putFloat((index + 2) * 4, buffer.getFloat((index + 2) * 4) + v.skinVertPos.z * nexteffect)
+        val index = model.skins(0).skinVertData(v.skinVertIndex).skinVertIndex *
+                      model.VERTEX_BUFFER_STRIDE
+        vertex.putFloat(index+0, vertex.getFloat(index+0) + v.skinVertPos.x * nexteffect)
+        vertex.putFloat(index+4, vertex.getFloat(index+4) + v.skinVertPos.y * nexteffect)
+        vertex.putFloat(index+8, vertex.getFloat(index+8) + v.skinVertPos.z * nexteffect)
       }
     }
   }

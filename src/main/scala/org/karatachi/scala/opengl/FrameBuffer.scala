@@ -13,7 +13,8 @@ object FrameBuffer {
   var active: Option[FrameBuffer] = None
   var buffers = Map[String, FrameBuffer]()
 
-  def create(name: String, width: Int, height: Int): FrameBuffer = {
+  def create(name: String, width: Int = Display.getDisplayMode.getWidth,
+             height: Int = Display.getDisplayMode.getWidth): FrameBuffer = {
     val buffer = new FrameBuffer(width, height)
     buffers += (name -> buffer)
     buffer

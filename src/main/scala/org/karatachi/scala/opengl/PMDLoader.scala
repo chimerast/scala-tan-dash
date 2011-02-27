@@ -11,6 +11,7 @@ import org.lwjgl.opengl.GL12._
 import org.lwjgl.opengl.GL13._
 import org.lwjgl.opengl.GL15._
 import org.lwjgl.opengl.GL20._
+import org.lwjgl.util.vector._
 import org.newdawn.slick.opengl._
 
 import org.karatachi.scala.IOUtils._
@@ -115,7 +116,9 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     glLoadBufferObject(GL_ELEMENT_ARRAY_BUFFER, buffer)
   }
   /** スキニング用変換行列リスト */
-  private val matrixBuffer = BufferUtils.createFloatBuffer(16 * 200)
+  private val modelViewMatrix = BufferUtils.createFloatBuffer(16 * 200)
+  private val normalMatrix = BufferUtils.createFloatBuffer(9 * 200)
+  private val temporaryMatrix = new Matrix4f
 
   private var motion = None.asInstanceOf[Option[VMDModel]]
 
@@ -124,24 +127,47 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   }
 
   def loadMatrix(bone: PMDBone, frame: Float): Unit = {
-    glPushMatrix
-    matrixBuffer.position(bone.index * 16)
-    motion.foreach(_.applyBone(bone, matrixBuffer, frame))
-    matrixBuffer.position(bone.index * 16)
-    glGetFloat(GL_MODELVIEW_MATRIX, matrixBuffer)
-    bone.children.foreach(loadMatrix(_, frame))
-    glPopMatrix
+    glMatrix {
+      val pos = bone.index * 16
+
+      // アニメーションの読み込み
+      modelViewMatrix.position(pos)
+      motion.foreach(_.applyBone(bone, modelViewMatrix, frame))
+
+      // 現在の変換行列をバッファに書き込む
+      modelViewMatrix.position(pos)
+      glGetFloat(GL_MODELVIEW_MATRIX, modelViewMatrix)
+
+      // 法線計算のための逆行列の算出
+      modelViewMatrix.position(pos)
+      temporaryMatrix.load(modelViewMatrix)
+      temporaryMatrix.invert
+      normalMatrix.position(bone.index * 9)
+      normalMatrix.put(temporaryMatrix.m00)
+      normalMatrix.put(temporaryMatrix.m10)
+      normalMatrix.put(temporaryMatrix.m20)
+      normalMatrix.put(temporaryMatrix.m01)
+      normalMatrix.put(temporaryMatrix.m11)
+      normalMatrix.put(temporaryMatrix.m21)
+      normalMatrix.put(temporaryMatrix.m02)
+      normalMatrix.put(temporaryMatrix.m12)
+      normalMatrix.put(temporaryMatrix.m22)
+
+      bone.children.foreach(loadMatrix(_, frame))
+    }
   }
 
   def render(frame: Float=0.0f): Unit = {
     glEnable(GL_DEPTH_TEST)
 
-    matrixBuffer.clear()
+    modelViewMatrix.clear()
     loadMatrix(bones(0), frame)
-    matrixBuffer.position(0)
-    matrixBuffer.limit(matrixBuffer.capacity)
+    modelViewMatrix.position(0).limit(modelViewMatrix.capacity)
     ShaderProgram.active.foreach(_.uniform("modelViewMatrix[0]")(
-      glUniformMatrix4(_, false,  matrixBuffer)))
+      glUniformMatrix4(_, false,  modelViewMatrix)))
+    normalMatrix.position(0).limit(normalMatrix.capacity)
+    ShaderProgram.active.foreach(_.uniform("normalMatrix[0]")(
+      glUniformMatrix3(_, false,  normalMatrix)))
 
     // baseスキンの読み込み
     skins(0).skinVertData.foreach { v =>
