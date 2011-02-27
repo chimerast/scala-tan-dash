@@ -12,7 +12,8 @@ class ScalaTanDashProject(info: ProjectInfo) extends DefaultWebstartProject(info
 
     val newPath = System.getProperty("java.library.path") + ":" + ("lib"/"lwjgl"/"native"/os)
 
-    override def runJVMOptions = super.runJVMOptions ++ Seq("-Djava.library.path=" + newPath)
+    override def runJVMOptions = super.runJVMOptions ++ Seq("-Djava.library.path=" + newPath,
+      "-XX:+UseConcMarkSweepGC", "-XX:+CMSParallelRemarkEnabled", "-XX:+UseParNewGC")
 
     override def scalaJars = buildScalaInstance.libraryJar :: buildScalaInstance.compilerJar :: Nil
   })
@@ -28,8 +29,11 @@ class ScalaTanDashProject(info: ProjectInfo) extends DefaultWebstartProject(info
         <description>Scala-tan Dash</description>
         <offline-allowed />
       </information>
+      <security>
+        <all-permissions/>
+      </security>
       <resources>
-        <j2se version="1.5+" />
+        <j2se version="1.5+" java-vm-args="-XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:+UseParNewGC" />
         { defaultElements(libraries) }
         <extension name="LWJGLExtension" href="http://lwjgl.org/jnlp/extension.php"/>
       </resources>

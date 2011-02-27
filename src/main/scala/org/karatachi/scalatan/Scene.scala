@@ -52,19 +52,21 @@ class LoadingScene(next: Scene) extends Scene {
 class OpeningScene extends Scene {
   override val layers: List[Layer] = List(new DebugLayer)
 
-  var yukari: PMDModel = null
-  var ran: PMDModel = null
-  var miku: PMDModel = null
+  var yukari: Option[PMDModel] = null
+  var ran: Option[PMDModel] = null
+  var miku: Option[PMDModel] = null
   var texture: Texture = null
 
   override def init = {
     glClearColor(0.6f, 0.8f, 1.0f, 0.0f)
 
     //yukari = PMDLoader.load("resources/kask_yukari/kask_yukari.pmd")
-    //ran = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
+    ran = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
+    ran.foreach(_.attachMotion(VMDLoader.load("resources/Motion/ごまえミク.vmd")))
     //miku = PMDLoader.load("resources/Lat式ミクVer2.3/Lat式ミクVer2.3_Normal.pmd")
-    //miku = PMDLoader.load("resources/Model/初音ミク.pmd")
-    miku = PMDLoader.load("resources/らぶ式ミク/らぶ式ミク.pmd")
+    miku = PMDLoader.load("resources/Model/初音ミク.pmd")
+    miku.foreach(_.attachMotion(VMDLoader.load("resources/Motion/ごまえミク.vmd")))
+    //miku = PMDLoader.load("resources/ika/ikaopmf1016.pmd")
     //miku = PMDLoader.load("resources/Model/初音ミクmetal.pmd")
 
     texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
@@ -78,13 +80,11 @@ class OpeningScene extends Scene {
   }
 
   def draw = {
-    glMatrix {
-      glTranslatef(0.0f, 0.0f, 0.0f)
-      glScalef(0.10f, 0.10f, 0.10f)
-      glRotatef(time*60, 0.0f, 1.0f, 0.0f)
-      miku.activeSkins = List(8, 13)
-      miku.skinEffect = math.abs(math.sin(time).toFloat)
-      miku.render
+    miku.foreach { m=>
+      glMatrix {
+        glScalef(0.10f, 0.10f, 0.10f)
+        m.render(time * 24.0f)
+      }
     }
 /*
     glMatrix {

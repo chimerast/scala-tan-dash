@@ -18,14 +18,18 @@ import org.karatachi.scala.opengl.GLUtils._
 import org.karatachi.scala.opengl.ShaderProgram._
 
 object PMDLoader {
-  def load(path: String): PMDModel = {
-    val file = new File(path)
-    using(new RandomAccessFile(file, "r")) { f =>
-      val channel = f.getChannel
-      val buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size)
-      buffer.order(ByteOrder.LITTLE_ENDIAN)
+  def load(path: String): Option[PMDModel] = {
+    try {
+      val file = new File(path)
+      using(new RandomAccessFile(file, "r")) { f =>
+        val channel = f.getChannel
+        val buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size)
+        buffer.order(ByteOrder.LITTLE_ENDIAN)
 
-      new PMDModel(file, buffer)
+        Some(new PMDModel(file, buffer))
+      }
+    } catch {
+      case e: Exception => e.printStackTrace; None
     }
   }
 }
@@ -65,7 +69,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
           case "SPA" =>
             texture(1) = Some(TextureLoader.getTexture("BMP", new FileInputStream(file)))
           case ext =>
-            texture(0) =Some(TextureLoader.getTexture(ext, new FileInputStream(file)))
+            texture(0) = Some(TextureLoader.getTexture(ext, new FileInputStream(file)))
         }
       }
     }
@@ -111,25 +115,30 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     glLoadBufferObject(GL_ELEMENT_ARRAY_BUFFER, buffer)
   }
   /** スキニング用変換行列リスト */
-  val matrixBuffer = BufferUtils.createFloatBuffer(16 * 200)
+  private val matrixBuffer = BufferUtils.createFloatBuffer(16 * 200)
 
-  var activeSkins = List(1)
+  private var motion = None.asInstanceOf[Option[VMDModel]]
+
+  def attachMotion(vmd: Option[VMDModel]): Unit = motion = vmd
+
+  var activeSkins = List()
   var skinEffect = 0.0f
 
-  def loadMatrix(bone: PMDBone): Unit = {
+  def loadMatrix(bone: PMDBone, frame: Float): Unit = {
     glPushMatrix
-    glRotatef(10, 0.0f, 1.0f, 0.0f)
+    matrixBuffer.position(bone.index * 16)
+    motion.foreach(_.apply(bone, matrixBuffer, frame))
     matrixBuffer.position(bone.index * 16)
     glGetFloat(GL_MODELVIEW_MATRIX, matrixBuffer)
-    bone.children.foreach(loadMatrix)
+    bone.children.foreach(loadMatrix(_, frame))
     glPopMatrix
   }
 
-  def render(): Unit = {
+  def render(frame: Float=0.0f): Unit = {
     glEnable(GL_DEPTH_TEST)
 
     matrixBuffer.clear()
-    loadMatrix(bones(0))
+    loadMatrix(bones(0), frame)
     matrixBuffer.position(0)
     matrixBuffer.limit(matrixBuffer.capacity)
     ShaderProgram.active.foreach(_.uniform("modelViewMatrix[0]")(
@@ -284,7 +293,7 @@ class PMDBone(buffer: ByteBuffer) {
   val parentBoneIndex = buffer.getShort
   val tailPosBoneIndex = buffer.getShort
   val boneType = buffer.get
-  val dummy = buffer.getShort
+  val ikParentBoneIndex = buffer.getShort
   val boneHeadPos = new Vector(buffer)
 
   var index = -1

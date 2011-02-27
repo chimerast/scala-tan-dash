@@ -5,9 +5,6 @@ import org.karatachi.scala.opengl._
 
 object Bootstrap {
   def main(args: Array[String]): Unit = {
-    //val vmd = VMDLoader.load("resources/Motion/走る10.vmd")
-    //System.exit(0)
-
     var fullscreen = false
     for (arg <- args) {
       arg match {
