@@ -36,13 +36,13 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
   var bonemap = {
     val namemap = new HashMap[String, Set[VMDBone]] with MultiMap[String, VMDBone]
     bones.foreach(bone => namemap.addBinding(bone.boneName, bone))
-    val ret = namemap.map { case (n, b) => (n, b.toList.sortWith(_.frameNum < _.frameNum)) }
+    val ret = namemap.mapValues(_.toList.sortWith(_.frameNum < _.frameNum))
     ret.values.foreach(list => list.foldLeft(list.last) { case (p, c) => p.next = c; c })
     ret
   }
 
   var skinmap = {
-    val namemap = model.skins.indices.map(i => (model.skins(i).skinName -> i)).toMap
+    val namemap = model.skins.map(_.skinName).zipWithIndex.toMap
     val indexmap = new HashMap[Int, Set[VMDSkin]] with MultiMap[Int, VMDSkin]
     skins.foreach { s =>
       namemap.get(s.skinName).foreach { i =>
@@ -50,7 +50,7 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
         indexmap.addBinding(model.skins(i).skinType, s)
       }
     }
-    val ret = indexmap.map { case (i, b) => (i, b.toList.sortWith(_.frameNum < _.frameNum)) }
+    val ret = indexmap.mapValues(_.toList.sortWith(_.frameNum < _.frameNum))
     ret.values.foreach(list => list.foldLeft(list.last) { case (p, c) => p.next = c; c })
     ret
   }
