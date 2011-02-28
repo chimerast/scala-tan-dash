@@ -21,9 +21,7 @@ trait Scene {
 
   def update(): Unit
 
-  def render(): Unit = {
-    layers.foreach(_.render(this))
-  }
+  def render(): Unit = layers.foreach(_.render(this))
 
   def next(): Scene = this
 }
@@ -33,7 +31,6 @@ class LoadingScene(next: Scene) extends Scene {
 
   override def init(): Unit = {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
-
     glLoadFontGlyphs
   }
 
@@ -61,30 +58,26 @@ class OpeningScene extends Scene {
   var depth = 5.0
   var radian = 0.0
 
-  override def init = {
+  override def init(): Unit = {
     glClearColor(0.6f, 0.8f, 1.0f, 0.0f)
 
     miku = PMDLoader.load("resources/Model/初音ミク.pmd")
     miku.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
-    yukari = PMDLoader.load("resources/kask_yukari/kask_yukari.pmd")
-    yukari.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
-    ran = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
-    ran.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
+    //yukari = PMDLoader.load("resources/kask_yukari/kask_yukari.pmd")
+    //yukari.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
+    //ran = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
+    //ran.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
     //miku = PMDLoader.load("resources/ika/ikaopmf1016.pmd")
     //miku = PMDLoader.load("resources/Lat式ミクVer2.3/Lat式ミクVer2.3_Normal.pmd")
 
     texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
 
-    //FrameBuffer.create("NormalAndDepth")
-
     ShaderProgram.rootpath = "src/main/resources/shader";
     ShaderProgram.load("ToonShader")
     ShaderProgram.load("Edge")
-    //ShaderProgram.load("NormalAndDepth")
-    //ShaderProgram.load("Composition")
   }
 
-  def draw = {
+  def draw(): Unit = {
     miku.foreach { m =>
       glMatrix {
         glScalef(0.10f, 0.10f, 0.10f)
@@ -107,7 +100,7 @@ class OpeningScene extends Scene {
     }
   }
 
-  override def update = {
+  override def update(): Unit = {
     if (Keyboard.isKeyDown(Keyboard.KEY_UP))
       depth -= 2.0 * delta
     if (Keyboard.isKeyDown(Keyboard.KEY_DOWN))
@@ -129,15 +122,8 @@ class OpeningScene extends Scene {
     gluLookAt(x, 1.0f, z, 0.0f, 1.2f, 0.0f, 0.0f, 1.0f, 0.0f);
   }
 
-  override def render = {
+  override def render(): Unit = {
     ShaderProgram("Edge") { draw }
-
-    FrameBuffer("NormalAndDepth") {
-      glDisable(GL_BLEND)
-      ShaderProgram("NormalAndDepth") { draw }
-      glEnable(GL_BLEND)
-    }
-
     ShaderProgram("ToonShader") { draw }
 
     glMatrix {
@@ -148,10 +134,6 @@ class OpeningScene extends Scene {
         glVertex3f(-4.0f, 0.0f, 4.0f)
         glVertex3f(4.0f, 0.0f, 4.0f)
       }
-    }
-
-    ShaderProgram("Composition") {
-      FrameBuffer.texture("NormalAndDepth").foreach(glDrawImage(0, 0, 800, 600, _))
     }
 
     glDrawImage(0, 0, texture)

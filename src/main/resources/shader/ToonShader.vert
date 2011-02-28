@@ -6,6 +6,7 @@ varying vec3 normal;
 
 attribute vec2 boneIndex;
 attribute float boneWeight;
+attribute float edgeFlag;
 
 void main() {
     ivec2 index = ivec2(boneIndex);

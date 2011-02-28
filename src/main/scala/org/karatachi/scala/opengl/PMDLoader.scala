@@ -81,7 +81,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   bones.indices.foreach { i => bones(i).index = i }
   bones.filter(_.parentBoneIndex != -1).foreach { b => bones(b.parentBoneIndex).children ::= b }
 
-  val VERTEX_ELEMENTS = 11
+  val VERTEX_ELEMENTS = 12
   val VERTEX_BUFFER_STRIDE = VERTEX_ELEMENTS * 4;
 
   /** 頂点リストの元配列 */
@@ -99,6 +99,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       buffer.putFloat(v.boneNum(0))
       buffer.putFloat(v.boneNum(1))
       buffer.putFloat(1.0f - (v.boneWight / 100.0f))
+      buffer.putFloat(v.edgeFlag)
     }
     buffer.flip
     buffer
@@ -118,7 +119,9 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   /** スキニング用変換行列リスト */
   private val modelViewMatrix = BufferUtils.createFloatBuffer(16 * 200)
   private val normalMatrix = BufferUtils.createFloatBuffer(9 * 200)
-  private val temporaryMatrix = new Matrix4f
+
+  /** 使い回し用オブジェクト */
+  private val tempMatrix = new Matrix4f
 
   private var motion = None.asInstanceOf[Option[VMDModel]]
 
@@ -126,42 +129,12 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     motion = VMDLoader.load(path, this)
   }
 
-  def loadMatrix(bone: PMDBone, frame: Float): Unit = {
-    glMatrix {
-      val pos = bone.index * 16
-
-      // アニメーションの読み込み
-      modelViewMatrix.position(pos)
-      motion.foreach(_.applyBone(bone, modelViewMatrix, frame))
-
-      // 現在の変換行列をバッファに書き込む
-      modelViewMatrix.position(pos)
-      glGetFloat(GL_MODELVIEW_MATRIX, modelViewMatrix)
-
-      // 法線計算のための逆行列の算出
-      modelViewMatrix.position(pos)
-      temporaryMatrix.load(modelViewMatrix)
-      temporaryMatrix.invert
-      normalMatrix.position(bone.index * 9)
-      normalMatrix.put(temporaryMatrix.m00)
-      normalMatrix.put(temporaryMatrix.m10)
-      normalMatrix.put(temporaryMatrix.m20)
-      normalMatrix.put(temporaryMatrix.m01)
-      normalMatrix.put(temporaryMatrix.m11)
-      normalMatrix.put(temporaryMatrix.m21)
-      normalMatrix.put(temporaryMatrix.m02)
-      normalMatrix.put(temporaryMatrix.m12)
-      normalMatrix.put(temporaryMatrix.m22)
-
-      bone.children.foreach(loadMatrix(_, frame))
-    }
-  }
-
   def render(frame: Float=0.0f): Unit = {
     glEnable(GL_DEPTH_TEST)
 
+    // 全ボーンの変換行列の取得と設定
     modelViewMatrix.clear()
-    loadMatrix(bones(0), frame)
+    loadBoneMatrix(bones(0), frame)
     modelViewMatrix.position(0).limit(modelViewMatrix.capacity)
     ShaderProgram.active.foreach(_.uniform("modelViewMatrix[0]")(
       glUniformMatrix4(_, false,  modelViewMatrix)))
@@ -171,10 +144,10 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
     // baseスキンの読み込み
     skins(0).skinVertData.foreach { v =>
-      val index = v.skinVertIndex * VERTEX_ELEMENTS
-      vertexBufferRaw.putFloat((index + 0) * 4, v.skinVertPos.x)
-      vertexBufferRaw.putFloat((index + 1) * 4, v.skinVertPos.y)
-      vertexBufferRaw.putFloat((index + 2) * 4, v.skinVertPos.z)
+      val index = v.skinVertIndex * VERTEX_BUFFER_STRIDE
+      vertexBufferRaw.putFloat(index+0, v.skinVertPos.x)
+      vertexBufferRaw.putFloat(index+4, v.skinVertPos.y)
+      vertexBufferRaw.putFloat(index+8, v.skinVertPos.z)
     }
 
     // スキンの差分を適用
@@ -193,6 +166,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     glEnableClientState(GL_TEXTURE_COORD_ARRAY)
     ShaderProgram.active.foreach(_.attribute("boneIndex")(glEnableVertexAttribArray(_)))
     ShaderProgram.active.foreach(_.attribute("boneWeight")(glEnableVertexAttribArray(_)))
+    ShaderProgram.active.foreach(_.attribute("edgeFlag")(glEnableVertexAttribArray(_)))
 
     // vertex buffer中のデータの位置を指定
     glVertexPointer(3, GL_FLOAT, VERTEX_BUFFER_STRIDE, 0)
@@ -202,6 +176,8 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       glVertexAttribPointer(_, 2, GL_FLOAT, false, VERTEX_BUFFER_STRIDE, 8 * 4)))
     ShaderProgram.active.foreach(_.attribute("boneWeight")(
       glVertexAttribPointer(_, 1, GL_FLOAT, false, VERTEX_BUFFER_STRIDE, 10 * 4)))
+    ShaderProgram.active.foreach(_.attribute("edgeFlag")(
+      glVertexAttribPointer(_, 1, GL_FLOAT, false, VERTEX_BUFFER_STRIDE, 11 * 4)))
 
     ShaderProgram.active.foreach(_.uniform("texture0")(glUniform1i(_, 0)))
     ShaderProgram.active.foreach(_.uniform("texture1")(glUniform1i(_, 1)))
@@ -239,7 +215,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
       // 描画
       glDrawRangeElements(GL_TRIANGLES, 0, vertices.length - 1, m.faceVertCount,
-        GL_UNSIGNED_SHORT, index << 1)
+        GL_UNSIGNED_SHORT, index * 2)
 
       index += m.faceVertCount
     }
@@ -250,6 +226,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     glDisableClientState(GL_TEXTURE_COORD_ARRAY)
     ShaderProgram.active.foreach(_.attribute("boneIndex")(glDisableVertexAttribArray(_)))
     ShaderProgram.active.foreach(_.attribute("boneWeight")(glDisableVertexAttribArray(_)))
+    ShaderProgram.active.foreach(_.attribute("edgeFlag")(glDisableVertexAttribArray(_)))
 
     glBindBuffer(GL_ARRAY_BUFFER, 0)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
@@ -261,6 +238,34 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
     ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, GL_FALSE)))
     ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 0)))
+  }
+
+  def loadBoneMatrix(bone: PMDBone, frame: Float): Unit = {
+    glMatrix {
+      // ボーンアニメーションの読み込み
+      motion.foreach(_.applyBoneMatrix(bone, frame))
+
+      // 現在の変換行列をバッファに書き込む
+      modelViewMatrix.position(bone.index * 16)
+      glGetFloat(GL_MODELVIEW_MATRIX, modelViewMatrix)
+
+      // 法線計算のための逆行列の算出
+      modelViewMatrix.position(bone.index * 16)
+      tempMatrix.load(modelViewMatrix)
+      tempMatrix.invert
+      normalMatrix.position(bone.index * 9)
+      normalMatrix.put(tempMatrix.m00)
+      normalMatrix.put(tempMatrix.m10)
+      normalMatrix.put(tempMatrix.m20)
+      normalMatrix.put(tempMatrix.m01)
+      normalMatrix.put(tempMatrix.m11)
+      normalMatrix.put(tempMatrix.m21)
+      normalMatrix.put(tempMatrix.m02)
+      normalMatrix.put(tempMatrix.m12)
+      normalMatrix.put(tempMatrix.m22)
+
+      bone.children.foreach(loadBoneMatrix(_, frame))
+    }
   }
 }
 

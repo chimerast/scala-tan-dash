@@ -7,38 +7,35 @@ varying vec4 position;
 varying vec3 normal;
 
 void main() {
-    vec3 V = normalize(-position.xyz);
+    vec3 P = position.xyz;
+    vec3 L = normalize(gl_LightSource[0].position.xyz - P);
     vec3 N = normalize(normal);
-    vec3 L = normalize(gl_LightSource[0].position.xyz - position.xyz);
+    float dotNL = dot(N, L);
+    vec3 V = normalize(-P);
 
-    float dotNL = dot(L, N);
-    if (dotNL > 0.35) {
-        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0) * gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;
-    } else {
-        gl_FragColor = vec4(0.9, 0.9, 0.9, 1.0) * gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;
-    }
+    if (dotNL > 0.05)
+        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0) * gl_FrontLightProduct[0].diffuse;
+    else
+        gl_FragColor = vec4(0.8, 0.8, 0.8, 1.0) * gl_FrontLightProduct[0].diffuse;
 
-    gl_FragColor.rgb += gl_FrontMaterial.ambient.rgb * gl_LightSource[0].ambient.rgb;
-
+    gl_FragColor.rgb += gl_FrontLightProduct[0].ambient.rgb;
     gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);
 
-    if (texturing) {
+    if (texturing)
         gl_FragColor *= texture2D(texture0, gl_TexCoord[0].st);
-    }
 
     if (sphere != 0) {
-        vec2 st = N.xy * 0.5 + 0.5;
-        vec4 px = texture2D(texture1, st);
+        vec4 tex = texture2D(texture1, N.xy * 0.5 + 0.5);
         if (sphere == 1) {
-            gl_FragColor.rgb *= px.rgb;
+            gl_FragColor.rgb *= tex.rgb;
         } else if (sphere == 2) {
-            gl_FragColor.rgb += px.rgb;
+            gl_FragColor.rgb += tex.rgb;
         }
     }
 
     if (dotNL > 0.0) {
-        float NdotHV = max(dot(normal, gl_LightSource[0].halfVector.xyz), 0.0);
-        gl_FragColor.rgb += gl_FrontMaterial.specular.rgb * gl_LightSource[0].specular.rgb
-            * pow(dotNL, gl_FrontMaterial.shininess);
+        vec3 H = normalize(L + V);
+        float powNH = pow(max(dot(H, N), 0.0), gl_FrontMaterial.shininess);
+        gl_FragColor.rgb += gl_FrontLightProduct[0].specular.rgb * powNH;
     }
 }

@@ -5,6 +5,7 @@ import java.io._
 import java.nio._
 import java.nio.channels._
 
+import org.lwjgl._
 import org.lwjgl.opengl.GL11._
 import org.karatachi.scala.IOUtils._
 
@@ -54,8 +55,11 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
     ret
   }
 
+  /** 使い回し用オブジェクト */
+  private val tempBuffer = BufferUtils.createFloatBuffer(16)
+
   /** ボーンにアニメーションを適用する */
-  def applyBone(bone: PMDBone, matrix: FloatBuffer, frame: Float): Unit = {
+  def applyBoneMatrix(bone: PMDBone, frame: Float): Unit = {
     var f = frame; while (f >= maxFrame) f -= maxFrame
     bonemap.get(bone.boneName).map(_.takeWhile(_.frameNum <= f).last).foreach { curr =>
       val next = curr.next
@@ -69,13 +73,14 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
       val quat = curr.quat.slerp(next.quat, t)
 
       // 回転行列の設定
-      quat.setupMatrix(matrix)
-      matrix.position(matrix.position - 16)
+      tempBuffer.clear
+      quat.setupMatrix(tempBuffer)
+      tempBuffer.flip
 
       // 変換
       val head = bone.boneHeadPos
       glTranslatef(head.x+pos.x, head.y+pos.y, head.z+pos.z)
-      glMultMatrix(matrix)
+      glMultMatrix(tempBuffer)
       glTranslatef(-head.x, -head.y, -head.z)
     }
   }
