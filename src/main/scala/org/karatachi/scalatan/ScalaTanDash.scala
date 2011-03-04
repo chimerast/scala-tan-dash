@@ -42,17 +42,6 @@ object ScalaTanDash {
 
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    var lightPosition = Array(3.0f, 1.0f, 5.0f, 1.0f)
-    var lightDiffuse = Array(1.0f, 1.0f, 1.0f, 1,0f)
-    var lightAmbient = Array(0.0f, 0.0f, 0.0f, 1,0f)
-    var lightSpecular = Array(0.6f, 0.6f, 0.6f, 1,0f)
-
-    glEnable(GL_LIGHT0)
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition)
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse)
-    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
-    glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
   }
 
   def run() {

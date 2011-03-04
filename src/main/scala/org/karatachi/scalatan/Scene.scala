@@ -43,6 +43,7 @@ class LoadingScene(next: Scene) extends Scene {
 
   override def next(): Scene = {
     next.init
+    System.gc
     next
   }
 }
@@ -61,14 +62,19 @@ class OpeningScene extends Scene {
   override def init(): Unit = {
     glClearColor(0.6f, 0.8f, 1.0f, 0.0f)
 
-    miku = PMDLoader.load("resources/Model/初音ミク.pmd")
-    miku.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
-    //yukari = PMDLoader.load("resources/kask_yukari/kask_yukari.pmd")
+    miku = PMDLoader.load("resources/Model/VOCALOID/初音ミク.pmd")
+    //miku = PMDLoader.load("resources/Model/ちびまりさ/ちびまりさ.pmd")
+    miku.foreach(_.attachMotion("resources/Motion/恋愛サーキュレーション/恋愛サーキュレーション-ミク.vmd"))
+    yukari = PMDLoader.load("resources/Model/ちびまりさ/ちびまりさ.pmd")
+    yukari.foreach(_.attachMotion("resources/Motion/恋愛サーキュレーション/恋愛サーキュレーション-ちび.vmd"))
+    ran = PMDLoader.load("resources/Model/ちびまりさ/ちびまりさ.pmd")
+    ran.foreach(_.attachMotion("resources/Motion/恋愛サーキュレーション/恋愛サーキュレーション-ぷち.vmd"))
+    //miku = PMDLoader.load("resources/Model/VOCALOID/初音ミク.pmd")
+    //miku.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
+    //yukari = PMDLoader.load("resources/Model/kask_yukari/kask_yukari.pmd")
     //yukari.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
-    //ran = PMDLoader.load("resources/kask_ran/kask_ran.pmd")
+    //ran = PMDLoader.load("resources/Model/kask_ran/kask_ran.pmd")
     //ran.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
-    //miku = PMDLoader.load("resources/ika/ikaopmf1016.pmd")
-    //miku = PMDLoader.load("resources/Lat式ミクVer2.3/Lat式ミクVer2.3_Normal.pmd")
 
     texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
 
@@ -120,6 +126,17 @@ class OpeningScene extends Scene {
 
     glLoadIdentity
     gluLookAt(x, 1.0f, z, 0.0f, 1.2f, 0.0f, 0.0f, 1.0f, 0.0f);
+
+    var lightPosition = Array(3.0f, 1.0f, 5.0f, 1.0f)
+    var lightDiffuse = Array(1.0f, 1.0f, 1.0f, 1,0f)
+    var lightAmbient = Array(0.0f, 0.0f, 0.0f, 1,0f)
+    var lightSpecular = Array(0.6f, 0.6f, 0.6f, 1,0f)
+
+    glEnable(GL_LIGHT0)
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition)
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse)
+    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
   }
 
   override def render(): Unit = {

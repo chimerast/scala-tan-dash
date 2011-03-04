@@ -13,10 +13,11 @@ void main() {
     float dotNL = dot(N, L);
     vec3 V = normalize(-P);
 
-    if (dotNL > 0.05)
+    if (dotNL > 0.1)
         gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0) * gl_FrontLightProduct[0].diffuse;
     else
-        gl_FragColor = vec4(0.8, 0.8, 0.8, 1.0) * gl_FrontLightProduct[0].diffuse;
+        gl_FragColor = vec4(0.85, 0.8, 0.8, 1.0) * gl_FrontLightProduct[0].diffuse;
+
 
     gl_FragColor.rgb += gl_FrontLightProduct[0].ambient.rgb;
     gl_FragColor = clamp(gl_FragColor, 0.0, 1.0);

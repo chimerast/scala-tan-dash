@@ -1,5 +1,5 @@
-uniform mat4 modelViewMatrix[200];
-uniform mat3 normalMatrix[200];
+uniform mat4 modelViewMatrix[32];
+uniform mat3 normalMatrix[32];
 
 varying vec4 position;
 varying vec3 normal;

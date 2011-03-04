@@ -88,7 +88,7 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
   }
 
   /** スキンにアニメーションを適用する */
-  def applySkin(skintype: Int, vertex: ByteBuffer, frame: Float): Unit = {
+  def applySkin(skintype: Int, frame: Float): Unit = {
     var f = frame; while (f >= maxFrame) f -= maxFrame
     skinmap.get(skintype).map(_.takeWhile(_.frameNum <= f).last).foreach { curr =>
       val next = curr.next
@@ -100,19 +100,29 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
       // 補間しつつ適用
       val curreffect = curr.weight * (1.0f - t)
       model.skins(curr.index).skinVertData.foreach { v =>
-        val index = model.skins(0).skinVertData(v.skinVertIndex).skinVertIndex *
-                      model.VERTEX_BUFFER_STRIDE
-        vertex.putFloat(index+0, vertex.getFloat(index+0) + v.skinVertPos.x * curreffect)
-        vertex.putFloat(index+4, vertex.getFloat(index+4) + v.skinVertPos.y * curreffect)
-        vertex.putFloat(index+8, vertex.getFloat(index+8) + v.skinVertPos.z * curreffect)
+        val skinIndex = model.skins(0).skinVertData(v.skinVertIndex).skinVertIndex
+        model.verticesmap.get(skinIndex).foreach(_.foreach { i =>
+          val index = i * model.VERTEX_ELEMENTS
+          model.vertexBufferRaw.put(
+            index+0, model.vertexBufferRaw.get(index+0) + v.skinVertPos.x * curreffect)
+          model.vertexBufferRaw.put(
+            index+1, model.vertexBufferRaw.get(index+1) + v.skinVertPos.y * curreffect)
+          model.vertexBufferRaw.put(
+            index+2, model.vertexBufferRaw.get(index+2) + v.skinVertPos.z * curreffect)
+        })
       }
       val nexteffect = next.weight * t
       model.skins(next.index).skinVertData.foreach { v =>
-        val index = model.skins(0).skinVertData(v.skinVertIndex).skinVertIndex *
-                      model.VERTEX_BUFFER_STRIDE
-        vertex.putFloat(index+0, vertex.getFloat(index+0) + v.skinVertPos.x * nexteffect)
-        vertex.putFloat(index+4, vertex.getFloat(index+4) + v.skinVertPos.y * nexteffect)
-        vertex.putFloat(index+8, vertex.getFloat(index+8) + v.skinVertPos.z * nexteffect)
+        val skinIndex = model.skins(0).skinVertData(v.skinVertIndex).skinVertIndex
+        model.verticesmap.get(skinIndex).foreach(_.foreach { i =>
+          val index = i * model.VERTEX_ELEMENTS
+          model.vertexBufferRaw.put(
+            index+0, model.vertexBufferRaw.get(index+0) + v.skinVertPos.x * nexteffect)
+          model.vertexBufferRaw.put(
+            index+1, model.vertexBufferRaw.get(index+1) + v.skinVertPos.y * nexteffect)
+          model.vertexBufferRaw.put(
+            index+2, model.vertexBufferRaw.get(index+2) + v.skinVertPos.z * nexteffect)
+        })
       }
     }
   }
