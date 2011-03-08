@@ -1,5 +1,6 @@
 package org.karatachi.scala.opengl
 
+import scala.collection.mutable._
 import scala.io._
 import java.io._
 
@@ -12,7 +13,8 @@ import org.karatachi.scala.opengl.GLUtils._
 object ShaderProgram {
   var rootpath = ""
   var active: Option[ShaderProgram] = None
-  var programs = Map[String, ShaderProgram]()
+  var programs = new HashMap[String, ShaderProgram]
+  var stack = new Stack[Option[ShaderProgram]]
 
   def load(name: String): ShaderProgram = {
     val program = new ShaderProgram(Array(name + ".vert", name + ".frag"))
@@ -27,7 +29,12 @@ object ShaderProgram {
     }
   }
 
+  def get(name: String): Option[ShaderProgram] = {
+    programs.get(name)
+  }
+
   def bind(name: String): Unit = {
+    stack.push(active)
     programs.get(name).foreach { p =>
       if (!p.hasError) {
         glUseProgram(p.program)
@@ -37,8 +44,16 @@ object ShaderProgram {
   }
 
   def unbind(): Unit = {
-    glUseProgram(0)
-    active = None
+    stack.pop match {
+      case Some(p) =>
+        if (!p.hasError) {
+          glUseProgram(p.program)
+          active = Some(p)
+        }
+      case None =>
+        glUseProgram(0)
+        active = None
+    }
   }
 
   def apply(name: String)(block: => Unit): Unit = {

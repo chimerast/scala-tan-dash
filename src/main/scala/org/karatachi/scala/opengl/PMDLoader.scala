@@ -264,7 +264,6 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
       modelViewMatrixBuffer.clear
       normalMatrixBuffer.clear
-
       ShaderProgram.active.foreach(_.uniform("modelViewMatrix[0]")(
         glUniformMatrix4(_, false,  modelViewMatrixBuffer)))
       ShaderProgram.active.foreach(_.uniform("normalMatrix[0]")(
@@ -312,9 +311,6 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     ShaderProgram.active.foreach(_.attribute("boneWeight")(glDisableVertexAttribArray(_)))
     ShaderProgram.active.foreach(_.attribute("edgeFlag")(glDisableVertexAttribArray(_)))
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0)
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-
     glActiveTexture(GL_TEXTURE1)
     glBindTexture(GL_TEXTURE_2D, 0)
     glActiveTexture(GL_TEXTURE0)
@@ -322,6 +318,66 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
     ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, GL_FALSE)))
     ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 0)))
+
+    // 境界線描画
+    ShaderProgram("Edge") {
+      // 頂点データをvertex bufferを使用するように設定
+      glEnableClientState(GL_VERTEX_ARRAY)
+      glEnableClientState(GL_NORMAL_ARRAY)
+      glEnableClientState(GL_TEXTURE_COORD_ARRAY)
+      ShaderProgram.active.foreach(_.attribute("boneIndex")(glEnableVertexAttribArray(_)))
+      ShaderProgram.active.foreach(_.attribute("boneWeight")(glEnableVertexAttribArray(_)))
+      ShaderProgram.active.foreach(_.attribute("edgeFlag")(glEnableVertexAttribArray(_)))
+
+      // vertex buffer中のデータの位置を指定
+      glVertexPointer(3, GL_FLOAT, VERTEX_BUFFER_STRIDE, 0)
+      glNormalPointer(GL_FLOAT, VERTEX_BUFFER_STRIDE, 3 * 4)
+      glTexCoordPointer(2, GL_FLOAT, VERTEX_BUFFER_STRIDE, 6 * 4)
+      ShaderProgram.active.foreach(_.attribute("boneIndex")(
+        glVertexAttribPointer(_, 2, GL_FLOAT, false, VERTEX_BUFFER_STRIDE, 8 * 4)))
+      ShaderProgram.active.foreach(_.attribute("boneWeight")(
+        glVertexAttribPointer(_, 1, GL_FLOAT, false, VERTEX_BUFFER_STRIDE, 10 * 4)))
+      ShaderProgram.active.foreach(_.attribute("edgeFlag")(
+        glVertexAttribPointer(_, 1, GL_FLOAT, false, VERTEX_BUFFER_STRIDE, 11 * 4)))
+
+      // ディスプレイリスト毎に描画を行う
+      var vertexbase = 0
+      var indexbase = 0
+      displaylist.foreach { l =>
+        modelViewMatrixBuffer.clear
+        normalMatrixBuffer.clear
+        l.matrices.foreach { m =>
+          modelViewMatrixBuffer.put(modelViewMatrix, m*16, 16)
+          normalMatrixBuffer.put(normalMatrix, m*9, 9)
+        }
+
+        modelViewMatrixBuffer.clear
+        normalMatrixBuffer.clear
+        ShaderProgram.active.foreach(_.uniform("modelViewMatrix[0]")(
+          glUniformMatrix4(_, false,  modelViewMatrixBuffer)))
+        ShaderProgram.active.foreach(_.uniform("normalMatrix[0]")(
+          glUniformMatrix3(_, false,  normalMatrixBuffer)))
+
+        // 描画
+        val vertexend = vertexbase + l.vertices.length / VERTEX_ELEMENTS - 1
+        glDrawRangeElements(GL_TRIANGLES, vertexbase, vertexend,
+                            l.indices.length, GL_UNSIGNED_INT, indexbase * 4)
+
+        vertexbase = vertexend + 1
+        indexbase += l.indices.length
+      }
+
+      // 後始末
+      glDisableClientState(GL_VERTEX_ARRAY)
+      glDisableClientState(GL_NORMAL_ARRAY)
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY)
+      ShaderProgram.active.foreach(_.attribute("boneIndex")(glDisableVertexAttribArray(_)))
+      ShaderProgram.active.foreach(_.attribute("boneWeight")(glDisableVertexAttribArray(_)))
+      ShaderProgram.active.foreach(_.attribute("edgeFlag")(glDisableVertexAttribArray(_)))
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
   }
 
   def loadBoneMatrix(bone: PMDBone, frame: Float): Unit = {

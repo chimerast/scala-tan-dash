@@ -55,8 +55,6 @@ class OpeningScene extends Scene {
   var miku = None.asInstanceOf[Option[PMDModel]]
   var texture: Texture = null
 
-  var edge = true
-
   var depth = 5.0
   var radian = 0.0
 
@@ -73,10 +71,6 @@ class OpeningScene extends Scene {
     // ran.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
 
     texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
-
-    ShaderProgram.rootpath = "src/main/resources/shader";
-    ShaderProgram.load("ToonShader")
-    ShaderProgram.load("Edge")
   }
 
   def draw(): Unit = {
@@ -103,11 +97,6 @@ class OpeningScene extends Scene {
   }
 
   override def update(): Unit = {
-    if (Keyboard.isKeyDown(Keyboard.KEY_E))
-      edge = true
-    if (Keyboard.isKeyDown(Keyboard.KEY_R))
-      edge = false
-
     if (Keyboard.isKeyDown(Keyboard.KEY_UP))
       depth -= 2.0 * delta
     if (Keyboard.isKeyDown(Keyboard.KEY_DOWN))
@@ -142,8 +131,9 @@ class OpeningScene extends Scene {
   }
 
   override def render(): Unit = {
-    if (edge) ShaderProgram("Edge") { draw }
-    ShaderProgram("ToonShader") { draw }
+    ShaderProgram("ToonShader") {
+      draw
+    }
 
     glMatrix {
       glRender(GL_QUADS) {
