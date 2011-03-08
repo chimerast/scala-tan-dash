@@ -51,7 +51,10 @@ class OpeningScene extends Scene {
   override val layers: List[Layer] = List(new DebugLayer)
 
   var marisa = None.asInstanceOf[Option[PMDModel]]
-  var texture: Texture = null
+  var miku = None.asInstanceOf[Option[PMDModel]]
+  var yukari = None.asInstanceOf[Option[PMDModel]]
+  var ran = None.asInstanceOf[Option[PMDModel]]
+  var texture = None.asInstanceOf[Option[Texture]]
 
   var depth = 5.0
   var radian = 0.0
@@ -61,15 +64,41 @@ class OpeningScene extends Scene {
 
     marisa = PMDLoader.load("resources/Model/ちびまりさ/ちびまりさ.pmd")
     marisa.foreach(_.attachMotion("resources/Motion/恋愛サーキュレーション/恋愛サーキュレーション-ちび.vmd"))
+    //miku = PMDLoader.load("resources/Model/VOCALOID/初音ミク.pmd")
+    //miku.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
+    //yukari = PMDLoader.load("resources/Model/kask_yukari/kask_yukari.pmd")
+    //yukari.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
+    //ran = PMDLoader.load("resources/Model/kask_ran/kask_ran.pmd")
+    //ran.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
 
-    texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
+    texture = Some(TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png")))
   }
 
   def draw(): Unit = {
     marisa.foreach { m =>
       glMatrix {
-        glScalef(0.17f, 0.17f, 0.17f)
-        m.render(time * 24.0f)
+        glScalef(0.18f, 0.18f, 0.18f)
+        m.render(time * 30.0f)
+      }
+    }
+    miku.foreach { m =>
+      glMatrix {
+        glScalef(0.10f, 0.10f, 0.10f)
+        m.render(time * 30.0f)
+      }
+    }
+    yukari.foreach { m =>
+      glMatrix {
+        glTranslatef(0.7f, 0.0f, 0.0f)
+        glScalef(0.10f, 0.10f, 0.10f)
+        m.render(time * 30.0f)
+      }
+    }
+    ran.foreach { m =>
+      glMatrix {
+        glTranslatef(-0.7f, 0.0f, 0.0f)
+        glScalef(0.10f, 0.10f, 0.10f)
+        m.render(time * 30.0f)
       }
     }
   }
@@ -123,7 +152,7 @@ class OpeningScene extends Scene {
       }
     }
 
-    glDrawImage(0, 0, texture)
+    texture.foreach(glDrawImage(0, 0, _))
 
     super.render
   }

@@ -43,6 +43,8 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   val VERTEX_ELEMENTS = 12
   val VERTEX_BUFFER_STRIDE = VERTEX_ELEMENTS * 4;
 
+  val TOON_TEXTURE_DIR = "resources/Data"
+
   private val loadstart = System.nanoTime
   private val basedir = file.getParent
 
@@ -57,6 +59,19 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   val skinIndex = Array.fill(buffer.get) { buffer.getShort }
   val boneDispName = Array.fill(buffer.get) { buffer.getString(50) }
   val boneDisp = Array.fill(buffer.getInt) { new PMDBoneDisp(buffer) }
+
+  // 拡張
+  val headerEg =
+    if (buffer.remaining > 0 && buffer.get != 0)
+      Some(new PMDHeaderEg(buffer, this))
+    else
+      None
+
+  val toonFileNames =
+    if (buffer.remaining > 0)
+      Some(Array.fill(10) { buffer.getString(100) })
+    else
+      None
 
   // DirectXとカリングの向きが違うので直す
   (0 until indices.length / 3).foreach { i =>
@@ -74,14 +89,42 @@ class PMDModel(file: File, buffer: ByteBuffer) {
         val extension = file.getName.split("\\.").last.toUpperCase
         extension match {
           case "SPH" =>
-            m.textures(1) = Some(TextureLoader.getTexture("BMP", new FileInputStream(file)))
+            m.textures(1) = try {
+              Some(TextureLoader.getTexture("BMP", new FileInputStream(file)))
+            } catch { case _ => None }
           case "SPA" =>
-            m.textures(1) = Some(TextureLoader.getTexture("BMP", new FileInputStream(file)))
+            m.textures(1) = try {
+              Some(TextureLoader.getTexture("BMP", new FileInputStream(file)))
+            } catch { case _ => None }
           case ext =>
-            m.textures(0) = Some(TextureLoader.getTexture(ext, new FileInputStream(file)))
+            m.textures(0) = try {
+              Some(TextureLoader.getTexture(ext, new FileInputStream(file)))
+            } catch { case _ => None }
         }
       }
     }
+  }
+
+  // トゥーンテクスチャ読み込み
+  val toonTextures = toonFileNames match {
+    case Some(t) =>
+      t.map { n =>
+        try {
+          val file = new File(basedir, n)
+          if (file.isFile) {
+            Some(TextureLoader.getTexture("BMP", new FileInputStream(file)))
+          } else {
+            Some(TextureLoader.getTexture("BMP", new FileInputStream(new File(TOON_TEXTURE_DIR, n))))
+          }
+        } catch { case _ => None }
+      }
+    case None =>
+      (1 to 10).map { i =>
+        val file = new File(TOON_TEXTURE_DIR, "toon%02d.bmp".format(i))
+        try {
+          Some(TextureLoader.getTexture("BMP", new FileInputStream(file)))
+        } catch { case _ => None }
+      }.toArray
   }
 
   // ボーンのインデックスの設定および親子関係の構築
@@ -254,6 +297,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
     ShaderProgram.active.foreach(_.uniform("texture0")(glUniform1i(_, 0)))
     ShaderProgram.active.foreach(_.uniform("texture1")(glUniform1i(_, 1)))
+    ShaderProgram.active.foreach(_.uniform("texture2")(glUniform1i(_, 2)))
 
     // ディスプレイリスト毎に描画を行う
     var vertexbase = 0
@@ -300,6 +344,22 @@ class PMDModel(file: File, buffer: ByteBuffer) {
           glBindTexture(GL_TEXTURE_2D, 0)
       }
 
+      // トゥーンテクスチャの設定
+      glActiveTexture(GL_TEXTURE2)
+      if (l.material.toonIndex != 0xFF) {
+        toonTextures(l.material.toonIndex) match {
+          case Some(texture) =>
+            ShaderProgram.active.foreach(_.uniform("toon")(glUniform1i(_, GL_TRUE)))
+            texture.bind
+          case None =>
+            ShaderProgram.active.foreach(_.uniform("toon")(glUniform1i(_, GL_FALSE)))
+            glBindTexture(GL_TEXTURE_2D, 0)
+        }
+      } else {
+        ShaderProgram.active.foreach(_.uniform("toon")(glUniform1i(_, GL_FALSE)))
+        glBindTexture(GL_TEXTURE_2D, 0)
+      }
+
       // 描画
       val vertexend = vertexbase + l.vertices.length / VERTEX_ELEMENTS - 1
       glDrawRangeElements(GL_TRIANGLES, vertexbase, vertexend,
@@ -317,6 +377,9 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     ShaderProgram.active.foreach(_.attribute("boneWeight")(glDisableVertexAttribArray(_)))
     ShaderProgram.active.foreach(_.attribute("edgeFlag")(glDisableVertexAttribArray(_)))
 
+    // 最後がGL_TEXTURE0になるように
+    glActiveTexture(GL_TEXTURE2)
+    glBindTexture(GL_TEXTURE_2D, 0)
     glActiveTexture(GL_TEXTURE1)
     glBindTexture(GL_TEXTURE_2D, 0)
     glActiveTexture(GL_TEXTURE0)
@@ -324,6 +387,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
     ShaderProgram.active.foreach(_.uniform("texturing")(glUniform1i(_, GL_FALSE)))
     ShaderProgram.active.foreach(_.uniform("sphere")(glUniform1i(_, 0)))
+    ShaderProgram.active.foreach(_.uniform("toon")(glUniform1i(_, GL_FALSE)))
 
     // 境界線描画
     ShaderProgram("Edge") {
@@ -434,7 +498,6 @@ class PMDHeader(buffer: ByteBuffer) {
 }
 
 class PMDHeaderEg(buffer: ByteBuffer, model: PMDModel) {
-  val englishNameCompatibility = buffer.get
   val modelName = buffer.getString(20)
   val comment = buffer.getString(256)
   val boneNameEg = Array.fill(model.bones.length) { buffer.getString(20) }
