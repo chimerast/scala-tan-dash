@@ -43,11 +43,13 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   val VERTEX_ELEMENTS = 12
   val VERTEX_BUFFER_STRIDE = VERTEX_ELEMENTS * 4;
 
-  val basedir = file.getParent
+  private val loadstart = System.nanoTime
+  private val basedir = file.getParent
 
+  // 3Dモデル構造体
   val header = new PMDHeader(buffer)
   val vertices = Array.fill(buffer.getInt) { new PMDVertex(buffer) }
-  val indices = Array.fill(buffer.getInt) { buffer.getShort }
+  val indices = Array.fill(buffer.getInt) { val v = buffer.getShort; if (v < 0) v + 0x10000 else v }
   val materials = Array.fill(buffer.getInt) { new PMDMaterial(buffer) }
   val bones = Array.fill(buffer.getShort) { new PMDBone(buffer) }
   val iks = Array.fill(buffer.getShort) { new PMDIKData(buffer) }
@@ -55,11 +57,6 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   val skinIndex = Array.fill(buffer.get) { buffer.getShort }
   val boneDispName = Array.fill(buffer.get) { buffer.getString(50) }
   val boneDisp = Array.fill(buffer.getInt) { new PMDBoneDisp(buffer) }
-
-  println("モデル名: " + header.modelName)
-  println("頂点数: " + vertices.length)
-  println("面数: " + indices.length / 3)
-  println("ボーン数: " + bones.length)
 
   // DirectXとカリングの向きが違うので直す
   (0 until indices.length / 3).foreach { i =>
@@ -91,10 +88,10 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   bones.indices.foreach { i => bones(i).index = i }
   bones.filter(_.parentBoneIndex != -1).foreach { b => bones(b.parentBoneIndex).children ::= b }
 
-  // 表示リストの頂点置換マップ
+  /** 表示リストの頂点置換マップ */
   val verticesset = new HashMap[Int, Set[Int]] with MultiMap[Int, Int]
 
-  // 表示リスト
+  /** 表示リスト */
   val displaylist = {
     val displaylist = new ArrayBuffer[PMDDisplayList]
 
@@ -107,10 +104,10 @@ class PMDModel(file: File, buffer: ByteBuffer) {
         val matricesbuf = new ArrayBuffer[Int]
         val matricesmap = new HashMap[Short, Int]
         val verticesbuf = new ArrayBuffer[Float]
-        val verticesmap = new HashMap[Short, Int]
+        val verticesmap = new HashMap[Int, Int]
         val indicesbuf = new ArrayBuffer[Int]
 
-        def translate(orig: Short): Int = {
+        def translate(orig: Int): Int = {
           var trans = verticesmap.getOrElse(orig, -1)
           if (trans == -1 && matricesbuf.size < MAX_MATRICES - 6) {
             trans = verticesmap.size
@@ -193,7 +190,16 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   private val tempMatrix = new Matrix4f
   private val tempMatrixBuffer = BufferUtils.createFloatBuffer(16)
 
+  /** モーション */
   private var motion = None.asInstanceOf[Option[VMDModel]]
+
+  private val loadend = System.nanoTime
+
+  println("モデル名: " + header.modelName)
+  println("頂点数: " + vertices.length)
+  println("面数: " + indices.length / 3)
+  println("ボーン数: " + bones.length)
+  println("ロード時間: %,d ms".format((loadend - loadstart)/(1000*1000)))
 
   def attachMotion(path: String): Unit = {
     motion = VMDLoader.load(path, this)

@@ -38,7 +38,7 @@ class LoadingScene(next: Scene) extends Scene {
   }
 
   override def render(): Unit = {
-    glDrawString(10, 10, "Now Loading" + "." * time.toInt, Color.white)
+    glDrawString(10, 10, "Now Loading...", Color.white)
   }
 
   override def next(): Scene = {
@@ -50,9 +50,7 @@ class LoadingScene(next: Scene) extends Scene {
 class OpeningScene extends Scene {
   override val layers: List[Layer] = List(new DebugLayer)
 
-  var yukari = None.asInstanceOf[Option[PMDModel]]
-  var ran = None.asInstanceOf[Option[PMDModel]]
-  var miku = None.asInstanceOf[Option[PMDModel]]
+  var marisa = None.asInstanceOf[Option[PMDModel]]
   var texture: Texture = null
 
   var depth = 5.0
@@ -61,36 +59,16 @@ class OpeningScene extends Scene {
   override def init(): Unit = {
     glClearColor(0.6f, 0.8f, 1.0f, 0.0f)
 
-    miku = PMDLoader.load("resources/Model/ちびまりさ/ちびまりさ.pmd")
-    miku.foreach(_.attachMotion("resources/Motion/恋愛サーキュレーション/恋愛サーキュレーション-ちび.vmd"))
-    // miku = PMDLoader.load("resources/Model/VOCALOID/初音ミク.pmd")
-    // miku.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
-    // yukari = PMDLoader.load("resources/Model/kask_yukari/kask_yukari.pmd")
-    // yukari.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
-    // ran = PMDLoader.load("resources/Model/kask_ran/kask_ran.pmd")
-    // ran.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
+    marisa = PMDLoader.load("resources/Model/ちびまりさ/ちびまりさ.pmd")
+    marisa.foreach(_.attachMotion("resources/Motion/恋愛サーキュレーション/恋愛サーキュレーション-ちび.vmd"))
 
     texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
   }
 
   def draw(): Unit = {
-    miku.foreach { m =>
+    marisa.foreach { m =>
       glMatrix {
         glScalef(0.17f, 0.17f, 0.17f)
-        m.render(time * 24.0f)
-      }
-    }
-    yukari.foreach { m =>
-      glMatrix {
-        glTranslatef(0.7f, 0.0f, 0.0f)
-        glScalef(0.10f, 0.10f, 0.10f)
-        m.render(time * 24.0f)
-      }
-    }
-    ran.foreach { m =>
-      glMatrix {
-        glTranslatef(-0.7f, 0.0f, 0.0f)
-        glScalef(0.10f, 0.10f, 0.10f)
         m.render(time * 24.0f)
       }
     }
@@ -103,8 +81,8 @@ class OpeningScene extends Scene {
       depth += 2.0 * delta
     if (depth < 1.0)
       depth = 1.0
-    if (depth > 10.0)
-      depth = 10.0
+    if (depth > 50.0)
+      depth = 50.0
 
     if (Keyboard.isKeyDown(Keyboard.KEY_LEFT))
       radian -= 1.0 * delta
