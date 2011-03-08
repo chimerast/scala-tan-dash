@@ -47,7 +47,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
   val header = new PMDHeader(buffer)
   val vertices = Array.fill(buffer.getInt) { new PMDVertex(buffer) }
-  val indices = Array.fill(buffer.getInt) { val i = buffer.getShort; if (i < 0) i + 0x10000 else i.toInt }
+  val indices = Array.fill(buffer.getInt) { buffer.getShort }
   val materials = Array.fill(buffer.getInt) { new PMDMaterial(buffer) }
   val bones = Array.fill(buffer.getShort) { new PMDBone(buffer) }
   val iks = Array.fill(buffer.getShort) { new PMDIKData(buffer) }
@@ -55,6 +55,11 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   val skinIndex = Array.fill(buffer.get) { buffer.getShort }
   val boneDispName = Array.fill(buffer.get) { buffer.getString(50) }
   val boneDisp = Array.fill(buffer.getInt) { new PMDBoneDisp(buffer) }
+
+  println("モデル名: " + header.modelName)
+  println("頂点数: " + vertices.length)
+  println("面数: " + indices.length / 3)
+  println("ボーン数: " + bones.length)
 
   // DirectXとカリングの向きが違うので直す
   (0 until indices.length / 3).foreach { i =>
@@ -87,7 +92,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   bones.filter(_.parentBoneIndex != -1).foreach { b => bones(b.parentBoneIndex).children ::= b }
 
   // 表示リストの頂点置換マップ
-  val verticesmap = new HashMap[Int, Set[Int]] with MultiMap[Int, Int]
+  val verticesset = new HashMap[Int, Set[Int]] with MultiMap[Int, Int]
 
   // 表示リスト
   val displaylist = {
@@ -100,28 +105,33 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
       while (rest.length > 0) {
         val matricesbuf = new ArrayBuffer[Int]
+        val matricesmap = new HashMap[Short, Int]
         val verticesbuf = new ArrayBuffer[Float]
+        val verticesmap = new HashMap[Short, Int]
         val indicesbuf = new ArrayBuffer[Int]
-        val map = new ArrayBuffer[Int]
 
-        def translate(orig: Int): Int = {
-          var trans = map.indexOf(orig)
+        def translate(orig: Short): Int = {
+          var trans = verticesmap.getOrElse(orig, -1)
           if (trans == -1 && matricesbuf.size < MAX_MATRICES - 6) {
-            map += orig
-            trans = map.indexOf(orig)
-            verticesmap.addBinding(orig, trans + vertexbase)
+            trans = verticesmap.size
+            verticesmap += orig -> verticesmap.size
+            verticesset.addBinding(orig, trans + vertexbase)
 
             val v = vertices(orig)
-            if (matricesbuf.indexOf(v.boneNum._1) == -1)
+            if (!matricesmap.contains(v.boneNum._1)) {
+              matricesmap += v.boneNum._1 -> matricesmap.size
               matricesbuf += v.boneNum._1
-            if (matricesbuf.indexOf(v.boneNum._2) == -1)
+            }
+            if (!matricesmap.contains(v.boneNum._2)) {
+              matricesmap += v.boneNum._2 -> matricesmap.size
               matricesbuf += v.boneNum._2
+            }
 
             verticesbuf.append(v.pos.x, v.pos.y, v.pos.z)
             verticesbuf.append(v.normal.x, v.normal.y, v.normal.z)
             verticesbuf.append(v.uv.u, v.uv.v)
-            verticesbuf.append(matricesbuf.indexOf(v.boneNum._1))
-            verticesbuf.append(matricesbuf.indexOf(v.boneNum._2))
+            verticesbuf.append(matricesmap(v.boneNum._1))
+            verticesbuf.append(matricesmap(v.boneNum._2))
             verticesbuf.append(1.0f - (v.boneWight / 100.0f))
             verticesbuf.append(v.edgeFlag)
           }
@@ -142,7 +152,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
         }
 
         displaylist += PMDDisplayList(m, matricesbuf.toArray, verticesbuf.toArray, indicesbuf.toArray)
-        vertexbase += map.length
+        vertexbase += verticesmap.size
       }
 
       indexbase += m.faceVertCount
@@ -198,7 +208,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     if (!skins.isEmpty) {
       // Baseスキンの読み込み
       skins(0).skinVertData.foreach { v =>
-        verticesmap.get(v.skinVertIndex).foreach(_.foreach { i =>
+        verticesset.get(v.skinVertIndex).foreach(_.foreach { i =>
           val index = i * VERTEX_ELEMENTS
           vertexBufferRaw.put(index+0, v.skinVertPos.x)
           vertexBufferRaw.put(index+1, v.skinVertPos.y)

@@ -101,7 +101,7 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
       val curreffect = curr.weight * (1.0f - t)
       model.skins(curr.index).skinVertData.foreach { v =>
         val skinIndex = model.skins(0).skinVertData(v.skinVertIndex).skinVertIndex
-        model.verticesmap.get(skinIndex).foreach(_.foreach { i =>
+        model.verticesset.get(skinIndex).foreach(_.foreach { i =>
           val index = i * model.VERTEX_ELEMENTS
           model.vertexBufferRaw.put(
             index+0, model.vertexBufferRaw.get(index+0) + v.skinVertPos.x * curreffect)
@@ -114,7 +114,7 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
       val nexteffect = next.weight * t
       model.skins(next.index).skinVertData.foreach { v =>
         val skinIndex = model.skins(0).skinVertData(v.skinVertIndex).skinVertIndex
-        model.verticesmap.get(skinIndex).foreach(_.foreach { i =>
+        model.verticesset.get(skinIndex).foreach(_.foreach { i =>
           val index = i * model.VERTEX_ELEMENTS
           model.vertexBufferRaw.put(
             index+0, model.vertexBufferRaw.get(index+0) + v.skinVertPos.x * nexteffect)

@@ -20,7 +20,7 @@ object GLUtils {
     println("GPU: " + glGetString(GL_RENDERER))
     println("OpenGL: " + glGetString(GL_VERSION))
     println("GLSL: " + glGetString(GL_SHADING_LANGUAGE_VERSION))
-    println("framebuffer_object: " +  caps.GL_EXT_framebuffer_object)
+    // println("framebuffer_object: " +  caps.GL_EXT_framebuffer_object)
   }
 
   val defaultFont: UnicodeFont = {

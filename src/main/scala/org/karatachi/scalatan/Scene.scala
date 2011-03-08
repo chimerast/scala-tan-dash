@@ -38,12 +38,11 @@ class LoadingScene(next: Scene) extends Scene {
   }
 
   override def render(): Unit = {
-    glDrawString(10, 10, "Now Loading...", Color.white)
+    glDrawString(10, 10, "Now Loading" + "." * time.toInt, Color.white)
   }
 
   override def next(): Scene = {
     next.init
-    System.gc
     next
   }
 }
@@ -56,25 +55,22 @@ class OpeningScene extends Scene {
   var miku = None.asInstanceOf[Option[PMDModel]]
   var texture: Texture = null
 
+  var edge = true
+
   var depth = 5.0
   var radian = 0.0
 
   override def init(): Unit = {
     glClearColor(0.6f, 0.8f, 1.0f, 0.0f)
 
-    miku = PMDLoader.load("resources/Model/VOCALOID/初音ミク.pmd")
-    //miku = PMDLoader.load("resources/Model/ちびまりさ/ちびまりさ.pmd")
-    miku.foreach(_.attachMotion("resources/Motion/恋愛サーキュレーション/恋愛サーキュレーション-ミク.vmd"))
-    yukari = PMDLoader.load("resources/Model/ちびまりさ/ちびまりさ.pmd")
-    yukari.foreach(_.attachMotion("resources/Motion/恋愛サーキュレーション/恋愛サーキュレーション-ちび.vmd"))
-    ran = PMDLoader.load("resources/Model/ちびまりさ/ちびまりさ.pmd")
-    ran.foreach(_.attachMotion("resources/Motion/恋愛サーキュレーション/恋愛サーキュレーション-ぷち.vmd"))
-    //miku = PMDLoader.load("resources/Model/VOCALOID/初音ミク.pmd")
-    //miku.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
-    //yukari = PMDLoader.load("resources/Model/kask_yukari/kask_yukari.pmd")
-    //yukari.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
-    //ran = PMDLoader.load("resources/Model/kask_ran/kask_ran.pmd")
-    //ran.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
+    miku = PMDLoader.load("resources/Model/ちびまりさ/ちびまりさ.pmd")
+    miku.foreach(_.attachMotion("resources/Motion/恋愛サーキュレーション/恋愛サーキュレーション-ちび.vmd"))
+    // miku = PMDLoader.load("resources/Model/VOCALOID/初音ミク.pmd")
+    // miku.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
+    // yukari = PMDLoader.load("resources/Model/kask_yukari/kask_yukari.pmd")
+    // yukari.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
+    // ran = PMDLoader.load("resources/Model/kask_ran/kask_ran.pmd")
+    // ran.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
 
     texture = TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png"))
 
@@ -86,7 +82,7 @@ class OpeningScene extends Scene {
   def draw(): Unit = {
     miku.foreach { m =>
       glMatrix {
-        glScalef(0.10f, 0.10f, 0.10f)
+        glScalef(0.17f, 0.17f, 0.17f)
         m.render(time * 24.0f)
       }
     }
@@ -107,6 +103,11 @@ class OpeningScene extends Scene {
   }
 
   override def update(): Unit = {
+    if (Keyboard.isKeyDown(Keyboard.KEY_E))
+      edge = true
+    if (Keyboard.isKeyDown(Keyboard.KEY_R))
+      edge = false
+
     if (Keyboard.isKeyDown(Keyboard.KEY_UP))
       depth -= 2.0 * delta
     if (Keyboard.isKeyDown(Keyboard.KEY_DOWN))
@@ -120,6 +121,7 @@ class OpeningScene extends Scene {
       radian -= 1.0 * delta
     if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
       radian += 1.0 * delta
+
 
     val x = (depth * math.sin(radian)).toFloat
     val z = (depth * math.cos(radian)).toFloat
@@ -140,7 +142,7 @@ class OpeningScene extends Scene {
   }
 
   override def render(): Unit = {
-    ShaderProgram("Edge") { draw }
+    if (edge) ShaderProgram("Edge") { draw }
     ShaderProgram("ToonShader") { draw }
 
     glMatrix {
