@@ -29,6 +29,8 @@ trait Scene {
 class LoadingScene(next: Scene) extends Scene {
   override val layers: List[Layer] = List()
 
+  var loaded = false
+
   override def init(): Unit = {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
     glLoadFontGlyphs
@@ -42,8 +44,13 @@ class LoadingScene(next: Scene) extends Scene {
   }
 
   override def next(): Scene = {
-    next.init
-    next
+    if (loaded) {
+      next
+    } else {
+      next.init
+      loaded = true
+      this
+    }
   }
 }
 
@@ -71,7 +78,7 @@ class OpeningScene extends Scene {
     //ran = PMDLoader.load("resources/Model/kask_ran/kask_ran.pmd")
     //ran.foreach(_.attachMotion("resources/Motion/ごまえミク.vmd"))
 
-    texture = Some(TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png")))
+    //texture = Some(TextureLoader.getTexture("PNG", getClass.getResourceAsStream("/data/yukari.png")))
   }
 
   def draw(): Unit = {
@@ -117,7 +124,6 @@ class OpeningScene extends Scene {
       radian -= 1.0 * delta
     if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
       radian += 1.0 * delta
-
 
     val x = (depth * math.sin(radian)).toFloat
     val z = (depth * math.cos(radian)).toFloat

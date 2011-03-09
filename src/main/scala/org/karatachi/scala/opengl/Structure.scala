@@ -8,7 +8,7 @@ import org.lwjgl._
 import org.lwjgl.opengl._
 import org.lwjgl.opengl.GL11._
 
-case class Vector(x: Float, y: Float, z: Float) {
+case class Vector(x: Float=0.0f, y: Float=0.0f, z: Float=0.0f) {
   def this(buffer: ByteBuffer) =
     this(buffer.getFloat, buffer.getFloat, -buffer.getFloat)
   def +(rhs: Vector) = Vector(x+rhs.x, y+rhs.y, z+rhs.z)
@@ -17,10 +17,15 @@ case class Vector(x: Float, y: Float, z: Float) {
   def *(rhs: Float) = Vector(x*rhs, y*rhs, z*rhs)
   def unary_- = Vector(-x, -y, -z)
   def dot(rhs: Vector) = x*rhs.x + y*rhs.y + z*rhs.z
-  def interpolate(rhs: Vector, t: Float) = this*(1.0f-t) + rhs*t
+  def cross(rhs: Vector) = Vector(y*rhs.z-z*rhs.y, z*rhs.x-x*rhs.z, x*rhs.y-y*rhs.x)
+  def lerp(rhs: Vector, t: Float) = this*(1.0f-t) + rhs*t
+  def length = math.sqrt(x*x + y*y + z*z).toFloat
+  def normalize: Vector = {
+    this * (1.0f / length)
+  }
 }
 
-case class Quaternion(x: Float, y: Float, z: Float, w: Float) {
+case class Quaternion(x: Float=0.0f, y: Float=0.0f, z: Float=0.0f, w: Float=1.0f) {
   def this(buffer: ByteBuffer) =
     this(buffer.getFloat, buffer.getFloat, -buffer.getFloat, buffer.getFloat)
   def +(rhs: Quaternion) = Quaternion(x+rhs.x, y+rhs.y, z+rhs.z, w+rhs.w)
@@ -32,6 +37,10 @@ case class Quaternion(x: Float, y: Float, z: Float, w: Float) {
   def *(rhs: Float) = Quaternion(x*rhs, y*rhs, z*rhs, w*rhs)
   def unary_- = Quaternion(-x, -y, -z, -w)
   def dot(rhs: Quaternion) = x*rhs.x + y*rhs.y + z*rhs.z + w*rhs.w
+  def length = math.sqrt(x*x + y*y + z*z + w*w).toFloat
+  def normalize: Quaternion = {
+    this * (1.0f / length)
+  }
   def slerp(rhs: Quaternion, t: Float): Quaternion = {
     var lhs = this
     var dot = this.dot(rhs)
@@ -51,6 +60,15 @@ case class Quaternion(x: Float, y: Float, z: Float, w: Float) {
     buffer.put(xy+zw).put(1-xx-zz).put(yz-xw).put(0)
     buffer.put(xz-yw).put(yz+xw).put(1-xx-yy).put(0)
     buffer.put(0).put(0).put(0).put(1)
+  }
+}
+
+object Quaternion {
+  def fromAxisAngle(v: Vector, r: Float): Quaternion = {
+    val sin = math.sin(r * 0.5f).toFloat
+    val cos = math.cos(r * 0.5f).toFloat
+    val n = v.normalize
+    Quaternion(n.x*sin, n.y*sin, n.z*sin, cos)
   }
 }
 

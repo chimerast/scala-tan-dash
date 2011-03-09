@@ -57,11 +57,8 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
     ret
   }
 
-  /** 使い回し用オブジェクト */
-  private val tempBuffer = BufferUtils.createFloatBuffer(16)
-
   /** ボーンにアニメーションを適用する */
-  def applyBoneMatrix(bone: PMDBone, frame: Float): Unit = {
+  def applyBone(bone: PMDBone, frame: Float): Unit = {
     var f = frame; while (f >= maxFrame) f -= maxFrame
     bonemap.get(bone.boneName).map(_.takeWhile(_.frameNum <= f).last).foreach { curr =>
       val next = curr.next
@@ -71,19 +68,8 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
       val t = if (dist != 0.0f) (f - curr.frameNum) / dist else 0.0f
 
       // 補間
-      val pos = curr.pos.interpolate(next.pos, t)
-      val quat = curr.quat.slerp(next.quat, t)
-
-      // 回転行列の設定
-      tempBuffer.clear
-      quat.setupMatrix(tempBuffer)
-      tempBuffer.flip
-
-      // 変換
-      val head = bone.boneHeadPos
-      glTranslatef(head.x+pos.x, head.y+pos.y, head.z+pos.z)
-      glMultMatrix(tempBuffer)
-      glTranslatef(-head.x, -head.y, -head.z)
+      bone.pos = curr.pos.lerp(next.pos, t)
+      bone.rot = curr.rot.slerp(next.rot, t)
     }
   }
 
@@ -140,9 +126,8 @@ class VMDBone(buffer: ByteBuffer) {
   val boneName = buffer.getString(15)
   val frameNum = buffer.getInt
   val pos = new Vector(buffer)
-
-  val quat = new Quaternion(buffer)
-  val params = Array.fill(64) { buffer.get }
+  val rot = new Quaternion(buffer)
+  val cubicbezier = Array.fill(4) { Array.fill(4) { Array.fill(4) { buffer.get } } }
 
   var next = this
 }

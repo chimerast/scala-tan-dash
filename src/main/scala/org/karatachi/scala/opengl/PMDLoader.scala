@@ -105,7 +105,14 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     }
   }
 
-  // トゥーンテクスチャ読み込み
+  /** ルートボーン */
+  val rootBones = bones.filter(_.parentBoneIndex == -1)
+
+  // ボーンのインデックスの設定および親子関係の構築
+  bones.indices.foreach { i => bones(i).index = i }
+  bones.filter(_.parentBoneIndex != -1).foreach { b => bones(b.parentBoneIndex).children ::= b }
+
+  /** トゥーンテクスチャ */
   val toonTextures = toonFileNames match {
     case Some(t) =>
       t.map { n =>
@@ -126,10 +133,6 @@ class PMDModel(file: File, buffer: ByteBuffer) {
         } catch { case _ => None }
       }.toArray
   }
-
-  // ボーンのインデックスの設定および親子関係の構築
-  bones.indices.foreach { i => bones(i).index = i }
-  bones.filter(_.parentBoneIndex != -1).foreach { b => bones(b.parentBoneIndex).children ::= b }
 
   /** 表示リストの頂点置換マップ */
   val verticesset = new HashMap[Int, Set[Int]] with MultiMap[Int, Int]
@@ -251,8 +254,12 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   def render(frame: Float=0.0f): Unit = {
     glEnable(GL_DEPTH_TEST)
 
+    // モーションの計算
+    rootBones.foreach(calcBoneState(_, frame))
+    // IKの計算
+    iks.foreach(calcIKState(_))
     // 全ボーンの変換行列の取得と設定
-    loadBoneMatrix(bones(0), frame)
+    rootBones.foreach(loadBoneMatrix(_))
 
     if (!skins.isEmpty) {
       // Baseスキンの読み込み
@@ -450,10 +457,61 @@ class PMDModel(file: File, buffer: ByteBuffer) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
   }
 
-  def loadBoneMatrix(bone: PMDBone, frame: Float): Unit = {
+  def calcBoneState(bone: PMDBone, frame: Float): Unit = {
+    // ボーンアニメーションの読み込み
+    motion.foreach(_.applyBone(bone, frame))
+    bone.children.foreach(calcBoneState(_, frame))
+  }
+
+  def calcIKState(ik: PMDIKData): Unit = {
+/*
+    val ikbone = bones(ik.ikBoneIndex)
+    val target = ikbone.boneHeadPos + ikbone.pos
+    val effector = bones(ik.ikTargetBoneIndex)
+
+    // 初期化
+    ik.ikChildBoneIndex.foreach { i =>
+      val bone = bones(i);
+      bone.head = bone.boneHeadPos
+      bone.rot = Quaternion()
+    }
+
+    //(1 to ik.iteration).foreach { j =>
+      var acc = Vector()
+      ik.ikChildBoneIndex.indices.foreach { i =>
+        val head = bones(ik.ikChildBoneIndex(i))
+        val tail = bones(head.tailPosBoneIndex)
+
+        val v0 = tail.head - head.head + acc
+        val v1 = v0.normalize
+        val v2 = (target - head.head).normalize
+
+        val vaxis = v1 cross v2
+        val theta = math.acos(v1 dot v2).toFloat
+
+        head.rot = Quaternion.fromAxisAngle(vaxis, theta)
+
+        acc = v2 * v0.length
+      }
+    //}
+*/
+  }
+
+  def loadBoneMatrix(bone: PMDBone): Unit = {
     glMatrix {
-      // ボーンアニメーションの読み込み
-      motion.foreach(_.applyBoneMatrix(bone, frame))
+      val head = bone.boneHeadPos
+      val pos = bone.pos
+      val rot = bone.rot
+
+      // 回転行列の設定
+      tempMatrixBuffer.clear
+      rot.setupMatrix(tempMatrixBuffer)
+      tempMatrixBuffer.clear
+
+      // 変換
+      glTranslatef(head.x+pos.x, head.y+pos.y, head.z+pos.z)
+      glMultMatrix(tempMatrixBuffer)
+      glTranslatef(-head.x, -head.y, -head.z)
 
       // 現在の変換行列をバッファに書き込む
       tempMatrixBuffer.clear
@@ -476,7 +534,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       normalMatrix(bone.index*9+7) = tempMatrix.m12;
       normalMatrix(bone.index*9+8) = tempMatrix.m22;
 
-      bone.children.foreach(loadBoneMatrix(_, frame))
+      bone.children.foreach(loadBoneMatrix(_))
     }
   }
 }
@@ -534,6 +592,10 @@ class PMDBone(buffer: ByteBuffer) {
 
   var index = -1
   var children = List[PMDBone]()
+
+  var pos = Vector()
+  var rot = Quaternion()
+  var head = Vector()
 }
 
 class PMDIKData(buffer: ByteBuffer) {
