@@ -1,43 +1,44 @@
 package org.karatachi.scala.opengl
 
-import scala.math._
 import java.nio._
-import java.nio.channels._
-
-import org.lwjgl._
-import org.lwjgl.opengl._
 import org.lwjgl.opengl.GL11._
+import org.lwjgl.opengl._
+import org.lwjgl._
+import scala.math._
 
-case class Vector(x: Float=0.0f, y: Float=0.0f, z: Float=0.0f) {
-  def this(buffer: ByteBuffer) =
-    this(buffer.getFloat, buffer.getFloat, -buffer.getFloat)
-  def +(rhs: Vector) = Vector(x+rhs.x, y+rhs.y, z+rhs.z)
-  def -(rhs: Vector) = Vector(x-rhs.x, y-rhs.y, z-rhs.z)
-  def *(rhs: Vector) = Vector(x*rhs.x, y*rhs.y, z*rhs.z)
-  def *(rhs: Float) = Vector(x*rhs, y*rhs, z*rhs)
+case class Vector(x: Float = 0.0f, y: Float = 0.0f, z: Float = 0.0f) {
+  def this(buffer: ByteBuffer) = this(buffer.getFloat, buffer.getFloat, -buffer.getFloat)
+  def +(rhs: Vector) = Vector(x + rhs.x, y + rhs.y, z + rhs.z)
+  def -(rhs: Vector) = Vector(x - rhs.x, y - rhs.y, z - rhs.z)
+  def *(rhs: Vector) = Vector(x * rhs.x, y * rhs.y, z * rhs.z)
+  def *(rhs: Float) = Vector(x * rhs, y * rhs, z * rhs)
   def unary_- = Vector(-x, -y, -z)
-  def dot(rhs: Vector) = x*rhs.x + y*rhs.y + z*rhs.z
-  def cross(rhs: Vector) = Vector(y*rhs.z-z*rhs.y, z*rhs.x-x*rhs.z, x*rhs.y-y*rhs.x)
-  def lerp(rhs: Vector, t: Float) = this*(1.0f-t) + rhs*t
-  def length = math.sqrt(x*x + y*y + z*z).toFloat
+  def dot(rhs: Vector) = x * rhs.x + y * rhs.y + z * rhs.z
+  def cross(rhs: Vector) = Vector(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x)
+  def lerp(rhs: Vector, t: Float) = this * (1.0f - t) + rhs * t
+  def lerp(rhs: Vector, tx: Float, ty: Float, tz: Float) = Vector(
+    this.x * (1.0f - tx) + rhs.x * tx,
+    this.y * (1.0f - ty) + rhs.y * ty,
+    this.z * (1.0f - tz) + rhs.z * tz)
+  def length = math.sqrt(x * x + y * y + z * z).toFloat
   def normalize: Vector = {
     this * (1.0f / length)
   }
 }
 
-case class Quaternion(x: Float=0.0f, y: Float=0.0f, z: Float=0.0f, w: Float=1.0f) {
-  def this(buffer: ByteBuffer) =
-    this(buffer.getFloat, buffer.getFloat, -buffer.getFloat, buffer.getFloat)
-  def +(rhs: Quaternion) = Quaternion(x+rhs.x, y+rhs.y, z+rhs.z, w+rhs.w)
-  def -(rhs: Quaternion) = Quaternion(x-rhs.x, y-rhs.y, z-rhs.z, w-rhs.w)
-  def *(rhs: Quaternion) = Quaternion(w*rhs.x + x*rhs.w + y*rhs.z - z*rhs.y,
-                                      w*rhs.y - x*rhs.z + y*rhs.w + z*rhs.x,
-                                      w*rhs.z + x*rhs.y - y*rhs.x + z*rhs.w,
-                                      w*rhs.w - x*rhs.x - y*rhs.y - z*rhs.z)
-  def *(rhs: Float) = Quaternion(x*rhs, y*rhs, z*rhs, w*rhs)
+case class Quaternion(x: Float = 0.0f, y: Float = 0.0f, z: Float = 0.0f, w: Float = 1.0f) {
+  def this(buffer: ByteBuffer) = this(buffer.getFloat, buffer.getFloat, -buffer.getFloat, buffer.getFloat)
+  def +(rhs: Quaternion) = Quaternion(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w)
+  def -(rhs: Quaternion) = Quaternion(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w)
+  def *(rhs: Quaternion) = Quaternion(
+    w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y,
+    w * rhs.y - x * rhs.z + y * rhs.w + z * rhs.x,
+    w * rhs.z + x * rhs.y - y * rhs.x + z * rhs.w,
+    w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z)
+  def *(rhs: Float) = Quaternion(x * rhs, y * rhs, z * rhs, w * rhs)
   def unary_- = Quaternion(-x, -y, -z, -w)
-  def dot(rhs: Quaternion) = x*rhs.x + y*rhs.y + z*rhs.z + w*rhs.w
-  def length = math.sqrt(x*x + y*y + z*z + w*w).toFloat
+  def dot(rhs: Quaternion) = x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w
+  def length = math.sqrt(x * x + y * y + z * z + w * w).toFloat
   def normalize: Quaternion = {
     this * (1.0f / length)
   }
@@ -49,16 +50,16 @@ case class Quaternion(x: Float=0.0f, y: Float=0.0f, z: Float=0.0f, w: Float=1.0f
     val radian = acos(dot)
     if (abs(radian) < 0.0001f) return rhs
     val inverseSin = 1.0f / sin(radian)
-    val leftScale = sin((1.0f-t) * radian) * inverseSin
+    val leftScale = sin((1.0f - t) * radian) * inverseSin
     val rightScale = sin(t * radian) * inverseSin
     lhs * leftScale.toFloat + rhs * rightScale.toFloat
   }
   def setupMatrix(buffer: FloatBuffer): Unit = {
-    val xx = 2*x*x; val xy = 2*x*y; val xz = 2*x*z; val xw = 2*x*w;
-    val yy = 2*y*y; val yz = 2*y*z; val yw = 2*y*w; val zz = 2*z*z; val zw = 2*z*w;
-    buffer.put(1-yy-zz).put(xy-zw).put(xz+yw).put(0)
-    buffer.put(xy+zw).put(1-xx-zz).put(yz-xw).put(0)
-    buffer.put(xz-yw).put(yz+xw).put(1-xx-yy).put(0)
+    val xx = 2 * x * x; val xy = 2 * x * y; val xz = 2 * x * z; val xw = 2 * x * w;
+    val yy = 2 * y * y; val yz = 2 * y * z; val yw = 2 * y * w; val zz = 2 * z * z; val zw = 2 * z * w;
+    buffer.put(1 - yy - zz).put(xy - zw).put(xz + yw).put(0)
+    buffer.put(xy + zw).put(1 - xx - zz).put(yz - xw).put(0)
+    buffer.put(xz - yw).put(yz + xw).put(1 - xx - yy).put(0)
     buffer.put(0).put(0).put(0).put(1)
   }
 }
@@ -68,7 +69,7 @@ object Quaternion {
     val sin = math.sin(r * 0.5f).toFloat
     val cos = math.cos(r * 0.5f).toFloat
     val n = v.normalize
-    Quaternion(n.x*sin, n.y*sin, n.z*sin, cos)
+    Quaternion(n.x * sin, n.y * sin, n.z * sin, cos)
   }
 }
 

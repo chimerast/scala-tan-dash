@@ -1,10 +1,7 @@
 package org.karatachi.scalatan
 
-import org.lwjgl._
-import org.lwjgl.opengl._
-import org.lwjgl.opengl.GL11._
-import org.newdawn.slick._
 import org.karatachi.scala.opengl.GLUtils._
+import org.newdawn.slick._
 
 trait Layer {
   def render(scene: Scene)

@@ -2,15 +2,14 @@ package org.karatachi.scala.opengl
 
 import java.awt.{ GraphicsEnvironment, Font }
 import java.nio._
-
-import org.lwjgl._
-import org.lwjgl.opengl._
 import org.lwjgl.opengl.GL11._
 import org.lwjgl.opengl.GL15._
 import org.lwjgl.opengl.GL20._
-import org.newdawn.slick._
-import org.newdawn.slick.opengl._
+import org.lwjgl.opengl._
+import org.lwjgl._
 import org.newdawn.slick.font.effects._
+import org.newdawn.slick.opengl._
+import org.newdawn.slick._
 
 object GLUtils {
   def checkSupport(): Unit = {
@@ -20,7 +19,6 @@ object GLUtils {
     println("GPU: " + glGetString(GL_RENDERER))
     println("OpenGL: " + glGetString(GL_VERSION))
     println("GLSL: " + glGetString(GL_SHADING_LANGUAGE_VERSION))
-    // println("framebuffer_object: " +  caps.GL_EXT_framebuffer_object)
   }
 
   val defaultFont: UnicodeFont = {

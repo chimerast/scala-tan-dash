@@ -7,6 +7,8 @@ import java.nio.channels._
 
 import org.lwjgl._
 import org.lwjgl.opengl.GL11._
+import org.jdesktop.animation.timing.interpolation._
+
 import org.karatachi.scala.IOUtils._
 
 object VMDLoader {

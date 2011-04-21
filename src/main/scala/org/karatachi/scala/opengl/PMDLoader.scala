@@ -1,24 +1,21 @@
 package org.karatachi.scala.opengl
 
-import scala.collection.mutable._
-
 import java.io._
-import java.nio._
 import java.nio.channels._
-
-import org.lwjgl._
-import org.lwjgl.opengl._
+import java.nio._
+import org.karatachi.scala.IOUtils._
+import org.karatachi.scala.opengl.GLUtils._
+import org.karatachi.scala.opengl.ShaderProgram._
 import org.lwjgl.opengl.GL11._
 import org.lwjgl.opengl.GL12._
 import org.lwjgl.opengl.GL13._
 import org.lwjgl.opengl.GL15._
 import org.lwjgl.opengl.GL20._
+import org.lwjgl.opengl._
 import org.lwjgl.util.vector._
+import org.lwjgl._
 import org.newdawn.slick.opengl._
-
-import org.karatachi.scala.IOUtils._
-import org.karatachi.scala.opengl.GLUtils._
-import org.karatachi.scala.opengl.ShaderProgram._
+import scala.collection.mutable._
 
 object PMDLoader {
   def load(path: String): Option[PMDModel] = {
@@ -245,13 +242,13 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   println("頂点数: " + vertices.length)
   println("面数: " + indices.length / 3)
   println("ボーン数: " + bones.length)
-  println("ロード時間: %,d ms".format((loadend - loadstart)/(1000*1000)))
+  println("ロード時間: %,d ms".format((loadend - loadstart) / (1000 * 1000)))
 
   def attachMotion(path: String): Unit = {
     motion = VMDLoader.load(path, this)
   }
 
-  def render(frame: Float=0.0f): Unit = {
+  def render(frame: Float = 0.0f): Unit = {
     glEnable(GL_DEPTH_TEST)
 
     // モーションの計算
@@ -266,9 +263,9 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       skins(0).skinVertData.foreach { v =>
         verticesset.get(v.skinVertIndex).foreach(_.foreach { i =>
           val index = i * VERTEX_ELEMENTS
-          vertexBufferRaw.put(index+0, v.skinVertPos.x)
-          vertexBufferRaw.put(index+1, v.skinVertPos.y)
-          vertexBufferRaw.put(index+2, v.skinVertPos.z)
+          vertexBufferRaw.put(index + 0, v.skinVertPos.x)
+          vertexBufferRaw.put(index + 1, v.skinVertPos.y)
+          vertexBufferRaw.put(index + 2, v.skinVertPos.z)
         })
       }
 
@@ -315,16 +312,14 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       modelViewMatrixBuffer.clear
       normalMatrixBuffer.clear
       l.matrices.foreach { m =>
-        modelViewMatrixBuffer.put(modelViewMatrix, m*16, 16)
-        normalMatrixBuffer.put(normalMatrix, m*9, 9)
+        modelViewMatrixBuffer.put(modelViewMatrix, m * 16, 16)
+        normalMatrixBuffer.put(normalMatrix, m * 9, 9)
       }
 
       modelViewMatrixBuffer.clear
       normalMatrixBuffer.clear
-      ShaderProgram.active.foreach(_.uniform("modelViewMatrix[0]")(
-        glUniformMatrix4(_, false,  modelViewMatrixBuffer)))
-      ShaderProgram.active.foreach(_.uniform("normalMatrix[0]")(
-        glUniformMatrix3(_, false,  normalMatrixBuffer)))
+      ShaderProgram.active.foreach(_.uniform("modelViewMatrix[0]")(glUniformMatrix4(_, false, modelViewMatrixBuffer)))
+      ShaderProgram.active.foreach(_.uniform("normalMatrix[0]")(glUniformMatrix3(_, false, normalMatrixBuffer)))
 
       // テクスチャの設定
       glActiveTexture(GL_TEXTURE0)
@@ -369,8 +364,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 
       // 描画
       val vertexend = vertexbase + l.vertices.length / VERTEX_ELEMENTS - 1
-      glDrawRangeElements(GL_TRIANGLES, vertexbase, vertexend,
-                          l.indices.length, GL_UNSIGNED_INT, indexbase * 4)
+      glDrawRangeElements(GL_TRIANGLES, vertexbase, vertexend, l.indices.length, GL_UNSIGNED_INT, indexbase * 4)
 
       vertexbase = vertexend + 1
       indexbase += l.indices.length
@@ -424,21 +418,21 @@ class PMDModel(file: File, buffer: ByteBuffer) {
         modelViewMatrixBuffer.clear
         normalMatrixBuffer.clear
         l.matrices.foreach { m =>
-          modelViewMatrixBuffer.put(modelViewMatrix, m*16, 16)
-          normalMatrixBuffer.put(normalMatrix, m*9, 9)
+          modelViewMatrixBuffer.put(modelViewMatrix, m * 16, 16)
+          normalMatrixBuffer.put(normalMatrix, m * 9, 9)
         }
 
         modelViewMatrixBuffer.clear
         normalMatrixBuffer.clear
         ShaderProgram.active.foreach(_.uniform("modelViewMatrix[0]")(
-          glUniformMatrix4(_, false,  modelViewMatrixBuffer)))
+          glUniformMatrix4(_, false, modelViewMatrixBuffer)))
         ShaderProgram.active.foreach(_.uniform("normalMatrix[0]")(
-          glUniformMatrix3(_, false,  normalMatrixBuffer)))
+          glUniformMatrix3(_, false, normalMatrixBuffer)))
 
         // 描画
         val vertexend = vertexbase + l.vertices.length / VERTEX_ELEMENTS - 1
         glDrawRangeElements(GL_TRIANGLES, vertexbase, vertexend,
-                            l.indices.length, GL_UNSIGNED_INT, indexbase * 4)
+          l.indices.length, GL_UNSIGNED_INT, indexbase * 4)
 
         vertexbase = vertexend + 1
         indexbase += l.indices.length
@@ -464,7 +458,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
   }
 
   def calcIKState(ik: PMDIKData): Unit = {
-/*
+    /*
     val ikbone = bones(ik.ikBoneIndex)
     val target = ikbone.boneHeadPos + ikbone.pos
     val effector = bones(ik.ikTargetBoneIndex)
@@ -509,7 +503,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       tempMatrixBuffer.clear
 
       // 変換
-      glTranslatef(head.x+pos.x, head.y+pos.y, head.z+pos.z)
+      glTranslatef(head.x + pos.x, head.y + pos.y, head.z + pos.z)
       glMultMatrix(tempMatrixBuffer)
       glTranslatef(-head.x, -head.y, -head.z)
 
@@ -518,21 +512,21 @@ class PMDModel(file: File, buffer: ByteBuffer) {
       glGetFloat(GL_MODELVIEW_MATRIX, tempMatrixBuffer)
 
       tempMatrixBuffer.clear
-      tempMatrixBuffer.get(modelViewMatrix, bone.index*16, 16)
+      tempMatrixBuffer.get(modelViewMatrix, bone.index * 16, 16)
 
       // 法線計算のための逆行列の算出
       tempMatrixBuffer.clear
       tempMatrix.load(tempMatrixBuffer)
       tempMatrix.invert
-      normalMatrix(bone.index*9+0) = tempMatrix.m00;
-      normalMatrix(bone.index*9+1) = tempMatrix.m10;
-      normalMatrix(bone.index*9+2) = tempMatrix.m20;
-      normalMatrix(bone.index*9+3) = tempMatrix.m01;
-      normalMatrix(bone.index*9+4) = tempMatrix.m11;
-      normalMatrix(bone.index*9+5) = tempMatrix.m21;
-      normalMatrix(bone.index*9+6) = tempMatrix.m02;
-      normalMatrix(bone.index*9+7) = tempMatrix.m12;
-      normalMatrix(bone.index*9+8) = tempMatrix.m22;
+      normalMatrix(bone.index * 9 + 0) = tempMatrix.m00;
+      normalMatrix(bone.index * 9 + 1) = tempMatrix.m10;
+      normalMatrix(bone.index * 9 + 2) = tempMatrix.m20;
+      normalMatrix(bone.index * 9 + 3) = tempMatrix.m01;
+      normalMatrix(bone.index * 9 + 4) = tempMatrix.m11;
+      normalMatrix(bone.index * 9 + 5) = tempMatrix.m21;
+      normalMatrix(bone.index * 9 + 6) = tempMatrix.m02;
+      normalMatrix(bone.index * 9 + 7) = tempMatrix.m12;
+      normalMatrix(bone.index * 9 + 8) = tempMatrix.m22;
 
       bone.children.foreach(loadBoneMatrix(_))
     }
@@ -540,7 +534,7 @@ class PMDModel(file: File, buffer: ByteBuffer) {
 }
 
 case class PMDDisplayList(material: PMDMaterial, matrices: Array[Int],
-                          vertices: Array[Float], indices: Array[Int])
+  vertices: Array[Float], indices: Array[Int])
 
 /*
  * 以下データロード用構造体

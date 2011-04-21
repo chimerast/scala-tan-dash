@@ -1,16 +1,14 @@
 package org.karatachi.scalatan
 
-import org.lwjgl._
-import org.lwjgl.opengl._
-import org.lwjgl.opengl.GL11._
-import org.lwjgl.opengl.GL20._
-import org.lwjgl.input._
-import org.lwjgl.util.glu.Project._
-import org.newdawn.slick._
-import org.newdawn.slick.opengl._
-
-import org.karatachi.scala.opengl._
 import org.karatachi.scala.opengl.GLUtils._
+import org.karatachi.scala.opengl._
+import org.lwjgl.input._
+import org.lwjgl.opengl.GL11._
+import org.lwjgl.opengl._
+import org.lwjgl.util.glu.Project._
+import org.lwjgl._
+import org.newdawn.slick.opengl._
+import org.newdawn.slick._
 
 trait Scene {
   val layers: List[Layer]
@@ -132,9 +130,9 @@ class OpeningScene extends Scene {
     gluLookAt(x, 1.0f, z, 0.0f, 1.2f, 0.0f, 0.0f, 1.0f, 0.0f);
 
     var lightPosition = Array(3.0f, 1.0f, 5.0f, 1.0f)
-    var lightDiffuse = Array(1.0f, 1.0f, 1.0f, 1,0f)
-    var lightAmbient = Array(0.0f, 0.0f, 0.0f, 1,0f)
-    var lightSpecular = Array(0.6f, 0.6f, 0.6f, 1,0f)
+    var lightDiffuse = Array(1.0f, 1.0f, 1.0f, 1, 0f)
+    var lightAmbient = Array(0.0f, 0.0f, 0.0f, 1, 0f)
+    var lightSpecular = Array(0.6f, 0.6f, 0.6f, 1, 0f)
 
     glEnable(GL_LIGHT0)
     glLightfv(GL_LIGHT0, GL_POSITION, lightPosition)

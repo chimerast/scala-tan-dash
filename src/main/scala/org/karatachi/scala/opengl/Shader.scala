@@ -1,14 +1,12 @@
 package org.karatachi.scala.opengl
 
-import scala.collection.mutable._
-import scala.io._
 import java.io._
-
-import org.lwjgl.opengl._
-import org.lwjgl.opengl.GL11._
-import org.lwjgl.opengl.GL20._
 import org.karatachi.scala.IOUtils._
 import org.karatachi.scala.opengl.GLUtils._
+import org.lwjgl.opengl.GL20._
+import org.lwjgl.opengl._
+import scala.collection.mutable._
+import scala.io._
 
 object ShaderProgram {
   var rootpath = ""
@@ -23,9 +21,10 @@ object ShaderProgram {
   }
 
   def reload(): Unit = {
-    programs = programs.map { case (name, program) =>
-      program.release
-      (name -> new ShaderProgram(program.path))
+    programs = programs.map {
+      case (name, program) =>
+        program.release
+        (name -> new ShaderProgram(program.path))
     }
   }
 
@@ -76,7 +75,7 @@ class ShaderProgram(val path: Array[String]) {
   private val uniforms = {
     val maxLength = glGetProgram(program, GL_ACTIVE_UNIFORM_MAX_LENGTH)
     (0 until glGetProgram(program, GL_ACTIVE_UNIFORMS)).map { i =>
-      val name =  glGetActiveUniform(program, i, maxLength)
+      val name = glGetActiveUniform(program, i, maxLength)
       (name, glGetUniformLocation(program, name))
     }.toMap
   }

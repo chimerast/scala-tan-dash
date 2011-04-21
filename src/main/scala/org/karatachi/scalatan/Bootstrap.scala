@@ -1,7 +1,6 @@
 package org.karatachi.scalatan
 
 import org.lwjgl._
-import org.karatachi.scala.opengl._
 
 object Bootstrap {
   def main(args: Array[String]): Unit = {
@@ -21,8 +20,7 @@ object Bootstrap {
         Sys.alert("Error", e.getMessage)
         e.printStackTrace
       }
-    }
-    finally {
+    } finally {
       ScalaTanDash.cleanup
     }
   }

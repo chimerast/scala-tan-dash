@@ -1,6 +1,9 @@
 import sbt._
+import de.element34.sbteclipsify._
 
-class ScalaTanDashProject(info: ProjectInfo) extends DefaultWebstartProject(info) {
+class ScalaTanDashProject(info: ProjectInfo) extends DefaultWebstartProject(info) with Eclipsify {
+  val timingframework = "net.java.dev.timingframework" % "timingframework" % "1.0"
+
   override def fork = Some(new ForkScalaRun {
     val os = System.getProperty("os.name").split(" ")(0).toLowerCase match {
       case "linux" => "linux"

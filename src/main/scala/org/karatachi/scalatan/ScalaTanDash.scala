@@ -1,14 +1,12 @@
 package org.karatachi.scalatan
 
-import org.lwjgl._
-import org.lwjgl.opengl._
-import org.lwjgl.opengl.GL11._
-import org.lwjgl.opengl.GL20._
-import org.lwjgl.util.glu.Project._
-import org.lwjgl.input._
-
-import org.karatachi.scala.opengl._
 import org.karatachi.scala.opengl.GLUtils._
+import org.karatachi.scala.opengl._
+import org.lwjgl.input._
+import org.lwjgl.opengl.GL11._
+import org.lwjgl.opengl._
+import org.lwjgl.util.glu.Project._
+import org.lwjgl._
 
 object ScalaTanDash {
   val GAME_TITLE = "Scala-tan Dash"
