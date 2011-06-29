@@ -1,0 +1,157 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.karatachi</groupId>
+  <artifactId>scalatan</artifactId>
+  <version>0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.source>1.6</maven.compiler.source>
+    <maven.compiler.target>1.6</maven.compiler.target>
+    <encoding>UTF-8</encoding>
+    <scala.version>2.9.0-1</scala.version>
+    <lwjgl.version>2.7.1</lwjgl.version>
+    <slick.version>274</slick.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl</artifactId>
+      <version>${lwjgl.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-util</artifactId>
+      <version>${lwjgl.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>slick</groupId>
+      <artifactId>slick</artifactId>
+      <version>${slick.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>0.9.27</version>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.8.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_2.9.0</artifactId>
+      <version>1.6.1</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+        <version>2.15.2</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.8.1</version>
+        <configuration>
+          <useFile>false</useFile>
+          <includes>
+            <include>**/*Spec.class</include>
+          </includes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <configuration>
+          <artifactItems>
+            <artifactItem>
+              <groupId>org.lwjgl</groupId>
+              <artifactId>lwjgl-native</artifactId>
+              <version>${lwjgl.version}</version>
+              <type>jar</type>
+              <outputDirectory>${project.build.directory}/libs/natives</outputDirectory>
+              <overWrite>true</overWrite>
+            </artifactItem>
+          </artifactItems>
+        </configuration>
+        <executions>
+          <execution>
+            <id>unpack</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-Djava.library.path=${project.build.directory}/libs/natives/win32:${project.build.directory}/libs/natives/linux:${project.build.directory}/libs/natives/macosx:${project.build.directory}/libs/natives/solaris</argument>
+            <argument>-classpath</argument>
+            <classpath/>
+            <argument>org.karatachi.scalatan.Bootstrap</argument>
+          </arguments>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <repositories>
+    <repository>
+      <id>ScalaToolsReleaseRepository</id>
+      <name>Scala Tools Release Repository</name>
+      <url>http://scala-tools.org/repo-releases/</url>
+    </repository>
+    <repository>
+      <id>lwjgl</id>
+      <name>lwjgl</name>
+      <url>http://adterrasperaspera.com/lwjgl</url>
+    </repository>
+    <repository>
+      <id>slick</id>
+      <name>slick</name>
+      <url>http://slick.cokeandcode.com/mavenrepo/</url>
+    </repository>
+  </repositories>
+
+  <name>Scala-Tan Dash</name>
+  <description />
+</project>

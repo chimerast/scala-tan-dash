@@ -4,6 +4,8 @@ import org.lwjgl._
 
 object Bootstrap {
   def main(args: Array[String]): Unit = {
+    println(System.getProperty("java.library.path"))
+
     var fullscreen = false
     for (arg <- args) {
       arg match {

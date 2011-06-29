@@ -1,15 +1,10 @@
 package org.karatachi.scala.opengl
 
-import scala.collection.mutable.{Set, HashMap, MultiMap}
 import java.io._
-import java.nio._
 import java.nio.channels._
-
-import org.lwjgl._
-import org.lwjgl.opengl.GL11._
-import org.jdesktop.animation.timing.interpolation._
-
+import java.nio._
 import org.karatachi.scala.IOUtils._
+import scala.collection.mutable.{ HashMap, MultiMap, Set }
 
 object VMDLoader {
   def load(path: String, model: PMDModel): Option[VMDModel] = {
@@ -32,8 +27,8 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
   val header = new VMDHeader(buffer)
   val bones = Array.fill(buffer.getInt) { new VMDBone(buffer) }
   val skins = Array.fill(buffer.getInt) { new VMDSkin(buffer) }
-  val maxFrame = math.max(bones.foldLeft(0)((a,b) => math.max(a, b.frameNum)),
-                          skins.foldLeft(0)((a,b) => math.max(a, b.frameNum)))
+  val maxFrame = math.max(bones.foldLeft(0)((a, b) => math.max(a, b.frameNum)),
+    skins.foldLeft(0)((a, b) => math.max(a, b.frameNum)))
 
   var bonemap = {
     // ボーン名毎にフレーム順に並んだマップを作成
@@ -92,11 +87,11 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
         model.verticesset.get(skinIndex).foreach(_.foreach { i =>
           val index = i * model.VERTEX_ELEMENTS
           model.vertexBufferRaw.put(
-            index+0, model.vertexBufferRaw.get(index+0) + v.skinVertPos.x * curreffect)
+            index + 0, model.vertexBufferRaw.get(index + 0) + v.skinVertPos.x * curreffect)
           model.vertexBufferRaw.put(
-            index+1, model.vertexBufferRaw.get(index+1) + v.skinVertPos.y * curreffect)
+            index + 1, model.vertexBufferRaw.get(index + 1) + v.skinVertPos.y * curreffect)
           model.vertexBufferRaw.put(
-            index+2, model.vertexBufferRaw.get(index+2) + v.skinVertPos.z * curreffect)
+            index + 2, model.vertexBufferRaw.get(index + 2) + v.skinVertPos.z * curreffect)
         })
       }
       val nexteffect = next.weight * t
@@ -105,11 +100,11 @@ class VMDModel(buffer: ByteBuffer, model: PMDModel) {
         model.verticesset.get(skinIndex).foreach(_.foreach { i =>
           val index = i * model.VERTEX_ELEMENTS
           model.vertexBufferRaw.put(
-            index+0, model.vertexBufferRaw.get(index+0) + v.skinVertPos.x * nexteffect)
+            index + 0, model.vertexBufferRaw.get(index + 0) + v.skinVertPos.x * nexteffect)
           model.vertexBufferRaw.put(
-            index+1, model.vertexBufferRaw.get(index+1) + v.skinVertPos.y * nexteffect)
+            index + 1, model.vertexBufferRaw.get(index + 1) + v.skinVertPos.y * nexteffect)
           model.vertexBufferRaw.put(
-            index+2, model.vertexBufferRaw.get(index+2) + v.skinVertPos.z * nexteffect)
+            index + 2, model.vertexBufferRaw.get(index + 2) + v.skinVertPos.z * nexteffect)
         })
       }
     }
@@ -121,7 +116,7 @@ class VMDHeader(buffer: ByteBuffer) {
   val modelName = buffer.getString(20)
 
   if (magic != "Vocaloid Motion Data 0002")
-    throw new PMDFormatException
+    throw new VMDFormatException
 }
 
 class VMDBone(buffer: ByteBuffer) {
